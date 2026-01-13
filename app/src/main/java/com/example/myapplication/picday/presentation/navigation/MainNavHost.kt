@@ -17,7 +17,7 @@ import com.example.myapplication.picday.presentation.common.SharedViewModel
 import com.example.myapplication.picday.presentation.calendar.CalendarScreen
 import com.example.myapplication.picday.presentation.diary.DiaryScreen
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.presentation.diary.WriteScreen
+import com.example.myapplication.picday.presentation.write.WriteScreen
 import java.time.LocalDate
 
 @Composable
