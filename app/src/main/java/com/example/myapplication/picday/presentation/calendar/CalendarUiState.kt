@@ -5,6 +5,7 @@ import java.time.YearMonth
 
 data class CalendarUiState(
     val currentYearMonth: YearMonth,
+    val selectedDate: LocalDate = LocalDate.now(),
     val calendarDays: List<CalendarDay> = emptyList(),
     val isLoading: Boolean = false
 )

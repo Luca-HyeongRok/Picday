@@ -14,7 +14,8 @@ class CalendarViewModel : ViewModel() {
     // 초기 상태는 ViewModel에서 명시적으로 생성
     private val _uiState = MutableStateFlow(
         CalendarUiState(
-            currentYearMonth = YearMonth.now()
+            currentYearMonth = YearMonth.now(),
+            selectedDate = LocalDate.now()
         )
     )
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
@@ -75,5 +76,11 @@ class CalendarViewModel : ViewModel() {
             it.copy(currentYearMonth = it.currentYearMonth.plusMonths(1))
         }
         loadCalendarDays()
+    }
+
+    fun onDateSelected(date: LocalDate) {
+        _uiState.update {
+            it.copy(selectedDate = date)
+        }
     }
 }

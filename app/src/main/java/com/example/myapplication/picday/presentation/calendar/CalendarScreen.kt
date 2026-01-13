@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalDate
 
 @Composable
 fun CalendarScreen(
@@ -120,12 +121,16 @@ fun CalendarScreen(
                 // 날짜 그리드 (7열)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(7),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(uiState.calendarDays) { day ->
-                        DayCell(day = day)
+                        DayCell(
+                            day = day,
+                            isSelected = day.date == uiState.selectedDate,
+                            onClick = { viewModel.onDateSelected(it) }
+                        )
                     }
                 }
             }
@@ -134,33 +139,56 @@ fun CalendarScreen(
 }
 
 @Composable
-fun DayCell(day: CalendarDay) {
+fun DayCell(
+    day: CalendarDay,
+    isSelected: Boolean,
+    onClick: (LocalDate) -> Unit
+) {
+    val isToday = day.isToday
+
     Box(
         modifier = Modifier
-            // 날짜 셀은 정사각형
             .aspectRatio(1f)
             .clip(CircleShape)
-            .background(
-                // 오늘 날짜는 강조 표시
-                if (day.isToday) MaterialTheme.colorScheme.primary
-                else Color.Transparent
-            )
-            // 현재 달에 속한 날짜만 클릭 가능
-            .clickable(enabled = day.isCurrentMonth) {
-                // TODO: 날짜 선택 이벤트 처리
-            },
+            .clickable(
+                enabled = day.isCurrentMonth,
+                onClick = { onClick(day.date) }
+            ),
         contentAlignment = Alignment.Center
     ) {
-
-        // 현재 달 날짜만 숫자 표시
         if (day.isCurrentMonth) {
+            // 배경 디자인 (선택됨 vs 오늘 vs 평소)
+            if (isSelected) {
+                // 선택된 날짜: 그림자가 있는 솔리드 원
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    shadowElevation = 6.dp
+                ) {}
+            } else if (isToday) {
+                // 오늘 (선택 안됨): 테두리 링
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    shape = CircleShape,
+                    color = Color.Transparent,
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    )
+                ) {}
+            }
+
+            // 날짜 텍스트
             Text(
                 text = day.date.dayOfMonth.toString(),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (day.isToday)
-                    MaterialTheme.colorScheme.onPrimary
-                else
-                    MaterialTheme.colorScheme.onSurface
+                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                color = when {
+                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                    isToday -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
             )
         }
     }
