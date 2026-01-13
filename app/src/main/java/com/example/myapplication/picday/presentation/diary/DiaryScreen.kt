@@ -36,13 +36,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.picday.domain.diary.Diary
+import com.example.myapplication.picday.presentation.navigation.WriteMode
 import java.time.LocalDate
 
 @Composable
 fun DiaryScreen(
     viewModel: DiaryViewModel = viewModel(),
     selectedDate: LocalDate = LocalDate.now(),
-    onWriteClick: (LocalDate) -> Unit = {}
+    onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     LaunchedEffect(selectedDate) {
@@ -65,14 +66,14 @@ fun DiaryScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            val representative = uiState.representative
-            if (representative != null) {
-                // 대표 기록 표시
-                DiaryItemCard(item = representative)
-                
+            val latestRecord = uiState.items.lastOrNull()
+            if (latestRecord != null) {
+                // 오늘의 기록 표시 (마지막에 추가된 기록)
+                DiaryItemCard(item = latestRecord)
+
                 // 추가 기록 버튼 (작게 표시)
                 OutlinedButton(
-                    onClick = { onWriteClick(uiState.selectedDate) },
+                    onClick = { onWriteClick(uiState.selectedDate, WriteMode.ADD) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -83,7 +84,7 @@ fun DiaryScreen(
             } else {
                 // 기록 없음: 기록 추가 버튼 강조
                 Button(
-                    onClick = { onWriteClick(uiState.selectedDate) },
+                    onClick = { onWriteClick(uiState.selectedDate, WriteMode.ADD) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp), // 높이를 주어 빈 공간 채움
@@ -111,10 +112,15 @@ fun DiaryScreen(
         }
 
         // 2. [최근 기록] 섹션 (스크롤 가능 영역)
-        if (uiState.recentItems.isNotEmpty()) {
+        val otherRecords = if (uiState.items.size > 1) {
+            uiState.items.dropLast(1)
+        } else {
+            emptyList()
+        }
+        if (otherRecords.isNotEmpty()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "최근 기록",
+                    text = "이 날의 기록",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -125,7 +131,7 @@ fun DiaryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 32.dp)
                 ) {
-                    items(uiState.recentItems) { item ->
+                    items(otherRecords) { item ->
                         DiaryItemCard(item = item)
                     }
                 }
@@ -174,12 +180,22 @@ fun DiaryItemCard(item: Diary) {
 
             // 제목 + 내용 미리보기 영역
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                val title = item.title
+                if (!title.isNullOrBlank()) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Text(
+                        text = "${item.date.monthValue}월 ${item.date.dayOfMonth}일의 기록",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 

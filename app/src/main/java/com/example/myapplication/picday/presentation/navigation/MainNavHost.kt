@@ -10,13 +10,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import android.net.Uri
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.myapplication.picday.presentation.common.SharedViewModel
 import com.example.myapplication.picday.presentation.calendar.CalendarScreen
 import com.example.myapplication.picday.presentation.diary.DiaryScreen
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.presentation.diary.DiaryWriteScreen
+import com.example.myapplication.picday.presentation.diary.WriteScreen
 import java.time.LocalDate
 
 @Composable
@@ -37,6 +38,12 @@ fun MainNavHost(
             CalendarScreen(
                 onDateSelected = { date ->
                     sharedViewModel.updateSelectedDate(date)
+                    val mode = if (diaryViewModel.hasAnyRecord(date)) {
+                        WriteMode.VIEW
+                    } else {
+                        WriteMode.ADD
+                    }
+                    navController.navigate(Screen.Write.createRoute(date, mode))
                 }
             )
         }
@@ -44,26 +51,34 @@ fun MainNavHost(
             DiaryScreen(
                 viewModel = diaryViewModel,
                 selectedDate = selectedDate,
-                onWriteClick = { date ->
-                    navController.navigate(Screen.DiaryWrite.createRoute(date))
+                onWriteClick = { date, mode ->
+                    navController.navigate(Screen.Write.createRoute(date, mode))
                 }
             )
         }
         composable(
-            route = Screen.DiaryWrite.route,
+            route = Screen.Write.route,
             arguments = listOf(
                 navArgument("date") {
                     type = NavType.StringType
-                    defaultValue = LocalDate.now().toString()
+                    defaultValue = Uri.encode(LocalDate.now().toString())
+                },
+                navArgument("mode") {
+                    type = NavType.StringType
+                    defaultValue = WriteMode.ADD.name
                 }
             )
         ) { backStackEntry ->
-            val dateArg = backStackEntry.arguments?.getString("date") ?: LocalDate.now().toString()
-            val date = LocalDate.parse(dateArg)
-            DiaryWriteScreen(
+            val dateArg = backStackEntry.arguments?.getString("date") ?: Uri.encode(LocalDate.now().toString())
+            val date = LocalDate.parse(Uri.decode(dateArg))
+            val modeArg = backStackEntry.arguments?.getString("mode") ?: WriteMode.ADD.name
+            val mode = WriteMode.valueOf(modeArg)
+            WriteScreen(
                 viewModel = diaryViewModel,
                 selectedDate = date,
-                onSaveComplete = { navController.popBackStack() }
+                mode = mode,
+                onSaveComplete = { navController.popBackStack() },
+                onCalendarClick = { navController.navigate(Screen.Calendar.route) }
             )
         }
     }

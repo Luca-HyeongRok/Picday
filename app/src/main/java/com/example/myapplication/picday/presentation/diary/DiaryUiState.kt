@@ -5,7 +5,6 @@ import java.time.LocalDate
 
 data class DiaryUiState(
     val selectedDate: LocalDate = LocalDate.now(),
-    val representative: Diary? = null,
-    val recentItems: List<Diary> = emptyList(),
+    val items: List<Diary> = emptyList(),
     val isLoading: Boolean = false
 )

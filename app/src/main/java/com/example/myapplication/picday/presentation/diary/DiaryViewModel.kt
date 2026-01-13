@@ -23,11 +23,11 @@ class DiaryViewModel : ViewModel() {
         updateUiForDate(date)
     }
 
-    fun addDiaryForDate(date: LocalDate, title: String, content: String) {
+    fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         val newItem = Diary(
             id = System.currentTimeMillis().toString(),
             date = date,
-            title = title.ifBlank { "제목 없음" },
+            title = title,
             previewContent = content
         )
         repository.addDiary(newItem)
@@ -36,13 +36,22 @@ class DiaryViewModel : ViewModel() {
         }
     }
 
+    fun updateDiary(diaryId: String, title: String?, content: String) {
+        if (repository.updateDiary(diaryId, title, content)) {
+            updateUiForDate(_uiState.value.selectedDate)
+        }
+    }
+
+    fun hasAnyRecord(date: LocalDate): Boolean {
+        return repository.getDiaries(date).isNotEmpty()
+    }
+
     private fun updateUiForDate(date: LocalDate) {
-        val day = repository.getDayDiary(date)
+        val items = repository.getDiaries(date)
         _uiState.update {
             it.copy(
                 selectedDate = date,
-                representative = day.representative,
-                recentItems = day.recent
+                items = items
             )
         }
     }
