@@ -28,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,15 +44,9 @@ fun DiaryScreen(
     selectedDate: LocalDate = LocalDate.now()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    val dateFormatted = "%04d.%02d.%02d".format(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth)
-    
-    // 선택된 날짜의 기록 찾기 (첫 번째 항목을 대표 기록으로)
-    val todayEntries = uiState.diaryList.filter { it.date == dateFormatted }
-    val representativeRecord = todayEntries.firstOrNull()
-    
-    // 그 외 기록들 (대표 기록 제외)
-    val otherRecords = uiState.diaryList.filter { it != representativeRecord }
+    LaunchedEffect(selectedDate) {
+        viewModel.onDateSelected(selectedDate)
+    }
 
     Column(
         modifier = Modifier
@@ -63,15 +58,16 @@ fun DiaryScreen(
         // 1. [오늘의 기록] 섹션
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
-                text = "${selectedDate.monthValue}월 ${selectedDate.dayOfMonth}일의 기록",
+                text = "${uiState.selectedDate.monthValue}월 ${uiState.selectedDate.dayOfMonth}일의 기록",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (representativeRecord != null) {
+            val representative = uiState.representative
+            if (representative != null) {
                 // 대표 기록 표시
-                DiaryItemCard(item = representativeRecord)
+                DiaryItemCard(item = representative)
                 
                 // 추가 기록 버튼 (작게 표시)
                 OutlinedButton(
@@ -114,7 +110,7 @@ fun DiaryScreen(
         }
 
         // 2. [최근 기록] 섹션 (스크롤 가능 영역)
-        if (otherRecords.isNotEmpty()) {
+        if (uiState.recentItems.isNotEmpty()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "최근 기록",
@@ -128,7 +124,7 @@ fun DiaryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 32.dp)
                 ) {
-                    items(otherRecords) { item ->
+                    items(uiState.recentItems) { item ->
                         DiaryItemCard(item = item)
                     }
                 }

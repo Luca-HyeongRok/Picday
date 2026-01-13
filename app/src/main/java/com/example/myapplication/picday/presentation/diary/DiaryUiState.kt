@@ -1,7 +1,11 @@
 package com.example.myapplication.picday.presentation.diary
 
+import java.time.LocalDate
+
 data class DiaryUiState(
-    val diaryList: List<DiaryItem> = emptyList(),
+    val selectedDate: LocalDate = LocalDate.now(),
+    val representative: DiaryItem? = null,
+    val recentItems: List<DiaryItem> = emptyList(),
     val isLoading: Boolean = false
 )
 
