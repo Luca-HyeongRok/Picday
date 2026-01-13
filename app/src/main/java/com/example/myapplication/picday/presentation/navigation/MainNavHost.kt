@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -17,6 +18,8 @@ import com.example.myapplication.picday.presentation.common.SharedViewModel
 import com.example.myapplication.picday.presentation.calendar.CalendarScreen
 import com.example.myapplication.picday.presentation.diary.DiaryScreen
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
+import com.example.myapplication.picday.presentation.diary.DiaryViewModelFactory
+import com.example.myapplication.picday.data.diary.DiaryRepositoryProvider
 import com.example.myapplication.picday.presentation.diary.write.WriteScreen
 import java.time.LocalDate
 
@@ -27,7 +30,11 @@ fun MainNavHost(
     innerPadding: PaddingValues
 ) {
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
-    val diaryViewModel: DiaryViewModel = viewModel()
+    val context = LocalContext.current
+    // ViewModel이 Repository를 직접 만들지 않도록 여기서 주입한다.
+    val diaryViewModel: DiaryViewModel = viewModel(
+        factory = DiaryViewModelFactory(DiaryRepositoryProvider.provide(context))
+    )
 
     NavHost(
         navController = navController,

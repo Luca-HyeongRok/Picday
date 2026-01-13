@@ -1,30 +1,22 @@
 package com.example.myapplication.picday.presentation.diary
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.room.Room
 import com.example.myapplication.picday.data.diary.DiaryRepository
-import com.example.myapplication.picday.data.diary.PicDayDatabase
-import com.example.myapplication.picday.data.diary.RoomDiaryRepository
 import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.diary.write.WriteUiMode
 import com.example.myapplication.picday.presentation.navigation.WriteMode
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
-class DiaryViewModel(application: Application) : AndroidViewModel(application) {
+class DiaryViewModel(
+    // Repository 생성 책임은 외부로 분리한다.
+    private val repository: DiaryRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
-    private val repository: DiaryRepository = RoomDiaryRepository(
-        Room.databaseBuilder(
-            application,
-            PicDayDatabase::class.java,
-            "picday.db"
-        ).build().diaryDao()
-    )
     private val _writeState = MutableStateFlow(WriteState())
     val writeState: StateFlow<WriteState> = _writeState.asStateFlow()
 
