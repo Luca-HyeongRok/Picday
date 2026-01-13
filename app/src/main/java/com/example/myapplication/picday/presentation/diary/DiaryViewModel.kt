@@ -49,9 +49,9 @@ class DiaryViewModel @Inject constructor(
         _writeState.update { it.copy(uiMode = WriteUiMode.EDIT, editingDiaryId = diaryId) }
     }
 
-    fun onSaveClicked(date: LocalDate, title: String?, content: String) {
+    fun onSaveClicked(date: LocalDate, title: String?, content: String, photoUris: List<String> = emptyList()) {
         when (_writeState.value.uiMode) {
-            WriteUiMode.ADD -> addDiaryForDate(date, title, content)
+            WriteUiMode.ADD -> addDiaryForDate(date, title, content, photoUris)
             WriteUiMode.EDIT -> {
                 val targetId = _writeState.value.editingDiaryId
                 if (targetId != null) {
@@ -64,6 +64,13 @@ class DiaryViewModel @Inject constructor(
 
     fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         repository.addDiaryForDate(date, title, content)
+        if (_uiState.value.selectedDate == date) {
+            updateUiForDate(date)
+        }
+    }
+
+    fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>) {
+        repository.addDiaryForDate(date, title, content, photoUris)
         if (_uiState.value.selectedDate == date) {
             updateUiForDate(date)
         }
