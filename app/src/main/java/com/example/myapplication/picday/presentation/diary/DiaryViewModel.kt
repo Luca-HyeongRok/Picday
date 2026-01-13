@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.LocalDate
 
 class DiaryViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
@@ -40,6 +41,18 @@ class DiaryViewModel : ViewModel() {
                     )
                 )
             ) 
+        }
+    }
+    fun addDiaryForDate(date: LocalDate) {
+        val formattedDate = "%04d.%02d.%02d".format(date.year, date.monthValue, date.dayOfMonth)
+        val newItem = DiaryItem(
+            id = System.currentTimeMillis().toString(),
+            date = formattedDate,
+            title = "새로운 기록",
+            previewContent = "이 날의 추가적인 기록입니다. 정말 멋진 하루였어요."
+        )
+        _uiState.update { 
+            it.copy(diaryList = listOf(newItem) + it.diaryList)
         }
     }
 }
