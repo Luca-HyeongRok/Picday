@@ -1,9 +1,5 @@
 package com.example.myapplication.picday.presentation.main
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -11,25 +7,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.myapplication.picday.presentation.calendar.CalendarScreen
-import com.example.myapplication.picday.presentation.diary.DiaryScreen
-
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Calendar : Screen("calendar", "Calendar", Icons.Default.DateRange)
-    object Diary : Screen("diary", "Diary", Icons.Default.Edit)
-}
+import com.example.myapplication.picday.presentation.common.SharedViewModel
+import com.example.myapplication.picday.presentation.navigation.MainNavHost
+import com.example.myapplication.picday.presentation.navigation.Screen
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    // 탭 간 데이터 공유를 위한 SharedViewModel
+    val sharedViewModel: SharedViewModel = viewModel()
+
     val items = listOf(Screen.Calendar, Screen.Diary)
 
     Scaffold(
@@ -56,13 +48,10 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        NavHost(
+        MainNavHost(
             navController = navController,
-            startDestination = Screen.Calendar.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Calendar.route) { CalendarScreen() }
-            composable(Screen.Diary.route) { DiaryScreen() }
-        }
+            sharedViewModel = sharedViewModel,
+            innerPadding = innerPadding
+        )
     }
 }

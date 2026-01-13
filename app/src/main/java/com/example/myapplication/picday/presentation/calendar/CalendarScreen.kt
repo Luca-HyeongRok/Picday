@@ -41,7 +41,8 @@ import androidx.compose.ui.graphics.Brush
 
 @Composable
 fun CalendarScreen(
-    viewModel: CalendarViewModel = viewModel()
+    viewModel: CalendarViewModel = viewModel(),
+    onDateSelected: (LocalDate) -> Unit = {}
 ) {
     // ViewModel에서 상태 수집
     val uiState by viewModel.uiState.collectAsState()
@@ -149,7 +150,10 @@ fun CalendarScreen(
                             DayCell(
                                 day = day,
                                 isSelected = day.date == uiState.selectedDate,
-                                onClick = { viewModel.onDateSelected(it) }
+                                onClick = { 
+                                    viewModel.onDateSelected(it)
+                                    onDateSelected(it)
+                                }
                             )
                         }
                     }

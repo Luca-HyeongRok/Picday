@@ -1,5 +1,7 @@
 package com.example.myapplication.picday.presentation.diary
 
+import java.time.LocalDate
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,7 +30,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun DiaryScreen(
-    viewModel: DiaryViewModel = viewModel()
+    viewModel: DiaryViewModel = viewModel(),
+    selectedDate: LocalDate = LocalDate.now()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -40,9 +43,9 @@ fun DiaryScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        // 화면 제목
+        // 화면 제목 (선택된 날짜 표시)
         Text(
-            text = "나의 기록",
+            text = "${selectedDate.year}년 ${selectedDate.monthValue}월 ${selectedDate.dayOfMonth}일의 기록",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
