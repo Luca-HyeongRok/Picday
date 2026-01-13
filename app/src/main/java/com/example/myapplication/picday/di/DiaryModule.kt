@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.myapplication.picday.BuildConfig
 import com.example.myapplication.picday.data.diary.database.PicDayDatabase
+import com.example.myapplication.picday.data.diary.dao.DiaryPhotoDao
 import com.example.myapplication.picday.data.diary.repository.InMemoryDiaryRepository
 import com.example.myapplication.picday.data.diary.repository.RoomDiaryRepository
 import com.example.myapplication.picday.data.diary.repository.seedDiaryData
@@ -35,13 +36,22 @@ object DiaryModule {
     }
 
     @Provides
+    fun provideDiaryPhotoDao(database: PicDayDatabase): DiaryPhotoDao {
+        return database.diaryPhotoDao()
+    }
+
+    @Provides
     @Singleton
-    fun provideDiaryRepository(diaryDao: DiaryDao): DiaryRepository {
+    fun provideDiaryRepository(
+        database: PicDayDatabase,
+        diaryDao: DiaryDao,
+        diaryPhotoDao: DiaryPhotoDao
+    ): DiaryRepository {
         // DEBUG는 InMemory + 시드, RELEASE는 Room 고정
         return if (BuildConfig.DEBUG) {
             InMemoryDiaryRepository(seedDiaryData())
         } else {
-            RoomDiaryRepository(diaryDao)
+            RoomDiaryRepository(database, diaryDao, diaryPhotoDao)
         }
     }
 }
