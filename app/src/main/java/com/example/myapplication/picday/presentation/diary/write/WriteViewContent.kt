@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.presentation.write
+package com.example.myapplication.picday.presentation.diary.write
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope

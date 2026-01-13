@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.example.myapplication.picday.data.diary.DiaryRepository
 import com.example.myapplication.picday.data.diary.InMemoryDiaryRepository
 import com.example.myapplication.picday.domain.diary.Diary
+import com.example.myapplication.picday.presentation.diary.write.WriteUiMode
+import com.example.myapplication.picday.presentation.navigation.WriteMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +16,8 @@ class DiaryViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
     private val repository: DiaryRepository = InMemoryDiaryRepository(seedData())
+    private val _writeState = MutableStateFlow(WriteState())
+    val writeState: StateFlow<WriteState> = _writeState.asStateFlow()
 
     init {
         updateUiForDate(LocalDate.now())
@@ -21,6 +25,37 @@ class DiaryViewModel : ViewModel() {
 
     fun onDateSelected(date: LocalDate) {
         updateUiForDate(date)
+    }
+
+    // WriteScreen 진입/모드 변경 시 ViewModel에서 모드 전환을 관리
+    fun setWriteMode(mode: WriteMode) {
+        _writeState.update {
+            it.copy(
+                uiMode = if (mode == WriteMode.ADD) WriteUiMode.ADD else WriteUiMode.VIEW,
+                editingDiaryId = null
+            )
+        }
+    }
+
+    fun onAddClicked() {
+        _writeState.update { it.copy(uiMode = WriteUiMode.ADD, editingDiaryId = null) }
+    }
+
+    fun onEditClicked(diaryId: String) {
+        _writeState.update { it.copy(uiMode = WriteUiMode.EDIT, editingDiaryId = diaryId) }
+    }
+
+    fun onSaveClicked(date: LocalDate, title: String?, content: String) {
+        when (_writeState.value.uiMode) {
+            WriteUiMode.ADD -> addDiaryForDate(date, title, content)
+            WriteUiMode.EDIT -> {
+                val targetId = _writeState.value.editingDiaryId
+                if (targetId != null) {
+                    updateDiary(targetId, title, content)
+                }
+            }
+            WriteUiMode.VIEW -> Unit
+        }
     }
 
     fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
@@ -56,6 +91,11 @@ class DiaryViewModel : ViewModel() {
         }
     }
 }
+
+data class WriteState(
+    val uiMode: WriteUiMode = WriteUiMode.VIEW,
+    val editingDiaryId: String? = null
+)
 
 private fun seedData(): List<Diary> {
     return listOf(
