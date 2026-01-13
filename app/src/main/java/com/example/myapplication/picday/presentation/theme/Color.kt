@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.ui.theme
+package com.example.myapplication.picday.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
