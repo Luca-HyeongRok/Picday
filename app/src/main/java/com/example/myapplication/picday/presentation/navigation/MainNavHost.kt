@@ -77,8 +77,8 @@ fun MainNavHost(
                 viewModel = diaryViewModel,
                 selectedDate = date,
                 mode = mode,
+                onBack = { navController.popBackStack() },
                 onSaveComplete = { navController.popBackStack() },
-                onCalendarClick = { navController.navigate(Screen.Calendar.route) }
             )
         }
     }
