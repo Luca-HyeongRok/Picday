@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.LocalDate
 
+import androidx.compose.ui.graphics.Brush
+
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = viewModel()
@@ -44,93 +46,112 @@ fun CalendarScreen(
     // ViewModel에서 상태 수집
     val uiState by viewModel.uiState.collectAsState()
 
-    Column(
+    // 캘린더 전체를 화면 중앙에 배치하는 컨테이너
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
     ) {
-
-        /* -----------------------------
-         * 월 이동 헤더 영역
-         * ----------------------------- */
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            // 헤더와 캘린더 간 간격을 적당히 유지
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
 
-            // 이전 달 이동 버튼
-            IconButton(onClick = { viewModel.onPreviousMonthClick() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "이전 달"
-                )
-            }
-
-            // 현재 연/월 표시 (API 24 안전)
-            Text(
-                text = "${uiState.currentYearMonth.year}년 ${uiState.currentYearMonth.monthValue}월",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            // 다음 달 이동 버튼
-            IconButton(onClick = { viewModel.onNextMonthClick() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "다음 달"
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        /* -----------------------------
-         * 캘린더 카드 영역
-         * ----------------------------- */
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                // 반투명 배경으로 카드 느낌 연출
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-                .padding(16.dp)
-        ) {
-            Column {
-
-                // 요일 헤더 (일요일 시작)
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    val daysOfWeek = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
-
-                    daysOfWeek.forEach { day ->
-                        Text(
-                            text = day,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+            /* -----------------------------
+             * 월 이동 헤더 (중앙 집중형)
+             * ----------------------------- */
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { viewModel.onPreviousMonthClick() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "이전 달",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${uiState.currentYearMonth.year} ${uiState.currentYearMonth.month.name}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                // 날짜 그리드 (7열)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(7),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(uiState.calendarDays) { day ->
-                        DayCell(
-                            day = day,
-                            isSelected = day.date == uiState.selectedDate,
-                            onClick = { viewModel.onDateSelected(it) }
+                IconButton(onClick = { viewModel.onNextMonthClick() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "다음 달",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            /* -----------------------------
+             * 캘린더 그리드 컨테이너
+             * ----------------------------- */
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // 플로팅 컨테이너 느낌을 위한 큰 라운드
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                // 하단으로 갈수록 밀도감 증가 (빈 공간 시각적 보완)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
                         )
+                    )
+                    .padding(24.dp)
+            ) {
+                Column {
+
+                    // 요일 헤더 (축약 표기)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val daysOfWeek = listOf("S", "M", "T", "W", "T", "F", "S")
+                        daysOfWeek.forEach { day ->
+                            Text(
+                                text = day,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 날짜 그리드 (7열 고정)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(7),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        userScrollEnabled = false,
+                        // 캘린더 박스 안에서 고정 높이 유지
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) {
+                        items(uiState.calendarDays) { day ->
+                            DayCell(
+                                day = day,
+                                isSelected = day.date == uiState.selectedDate,
+                                onClick = { viewModel.onDateSelected(it) }
+                            )
+                        }
                     }
                 }
             }
@@ -157,29 +178,38 @@ fun DayCell(
         contentAlignment = Alignment.Center
     ) {
         if (day.isCurrentMonth) {
-            // 배경 디자인 (선택됨 vs 오늘 vs 평소)
-            if (isSelected) {
-                // 선택된 날짜: 그림자가 있는 솔리드 원
-                androidx.compose.material3.Surface(
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
-                    shadowElevation = 6.dp
-                ) {}
-            } else if (isToday) {
-                // 오늘 (선택 안됨): 테두리 링
-                androidx.compose.material3.Surface(
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
-                    shape = CircleShape,
-                    color = Color.Transparent,
-                    border = androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                    )
-                ) {}
+
+            // 배경 스타일 처리
+            when {
+                // 선택된 날짜: 솔리드 원 + 그림자
+                isSelected -> {
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        shadowElevation = 6.dp
+                    ) {}
+                }
+
+                // 오늘 날짜 (선택 안 된 상태): 테두리 링
+                isToday -> {
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp),
+                        shape = CircleShape,
+                        color = Color.Transparent,
+                        border = androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
+                    ) {}
+                }
             }
 
-            // 날짜 텍스트
+            // 날짜 숫자 표시
             Text(
                 text = day.date.dayOfMonth.toString(),
                 style = MaterialTheme.typography.bodyMedium,
