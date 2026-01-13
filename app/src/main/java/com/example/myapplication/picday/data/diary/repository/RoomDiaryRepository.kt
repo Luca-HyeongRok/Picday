@@ -72,4 +72,23 @@ class RoomDiaryRepository(
     override fun getPhotos(diaryId: String): List<DiaryPhoto> = runBlocking(Dispatchers.IO) {
         diaryPhotoDao.getByDiaryId(diaryId).map { it.photoToDomain() }
     }
+
+    override fun replacePhotos(diaryId: String, photoUris: List<String>) {
+        val photos = photoUris.map { uri ->
+            DiaryPhotoEntity(
+                id = System.nanoTime().toString(),
+                diaryId = diaryId,
+                uri = uri,
+                createdAt = System.currentTimeMillis()
+            )
+        }
+        runBlocking(Dispatchers.IO) {
+            database.withTransaction {
+                diaryPhotoDao.deleteByDiaryId(diaryId)
+                if (photos.isNotEmpty()) {
+                    diaryPhotoDao.insertAll(photos)
+                }
+            }
+        }
+    }
 }

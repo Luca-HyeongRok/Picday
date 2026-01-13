@@ -87,9 +87,12 @@ fun WriteScreen(
         if (writeState.uiMode == WriteUiMode.ADD) {
             title = ""
             content = ""
+            photoUris.clear()
         } else if (writeState.uiMode == WriteUiMode.EDIT && editingDiary != null) {
             title = editingDiary.title.orEmpty()
             content = editingDiary.previewContent
+            photoUris.clear()
+            photoUris.addAll(viewModel.getPhotoUris(editingDiary.id))
         }
     }
 

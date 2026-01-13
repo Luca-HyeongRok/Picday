@@ -56,6 +56,7 @@ class DiaryViewModel @Inject constructor(
                 val targetId = _writeState.value.editingDiaryId
                 if (targetId != null) {
                     updateDiary(targetId, title, content)
+                    replacePhotos(targetId, photoUris)
                 }
             }
             WriteUiMode.VIEW -> Unit
@@ -74,6 +75,14 @@ class DiaryViewModel @Inject constructor(
         if (_uiState.value.selectedDate == date) {
             updateUiForDate(date)
         }
+    }
+
+    fun getPhotoUris(diaryId: String): List<String> {
+        return repository.getPhotos(diaryId).map { it.uri }
+    }
+
+    private fun replacePhotos(diaryId: String, photoUris: List<String>) {
+        repository.replacePhotos(diaryId, photoUris)
     }
 
     fun updateDiary(diaryId: String, title: String?, content: String) {

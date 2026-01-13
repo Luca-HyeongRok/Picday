@@ -78,6 +78,18 @@ class InMemoryDiaryRepository(
         return photosByDiaryId[diaryId]?.toList() ?: emptyList()
     }
 
+    override fun replacePhotos(diaryId: String, photoUris: List<String>) {
+        val photos = photoUris.map { uri ->
+            DiaryPhoto(
+                id = System.nanoTime().toString(),
+                diaryId = diaryId,
+                uri = uri,
+                createdAt = System.currentTimeMillis()
+            )
+        }
+        photosByDiaryId[diaryId] = photos.toMutableList()
+    }
+
     private fun addDiaryInternal(diary: Diary) {
         val day = diaryByDate.getOrPut(diary.date) { mutableListOf() }
         day.add(diary)

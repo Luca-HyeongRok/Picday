@@ -10,4 +10,5 @@ interface DiaryRepository {
     fun updateDiary(diaryId: String, title: String?, content: String): Boolean
     fun hasAnyRecord(date: LocalDate): Boolean
     fun getPhotos(diaryId: String): List<com.example.myapplication.picday.domain.diary.DiaryPhoto>
+    fun replacePhotos(diaryId: String, photoUris: List<String>)
 }
