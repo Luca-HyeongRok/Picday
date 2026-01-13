@@ -6,7 +6,7 @@ import java.time.LocalDate
 import kotlin.collections.iterator
 
 class InMemoryDiaryRepository(
-    seedData: List<Diary> = emptyList()
+    seedData: List<Diary> = seedDiaryData()
 ) : DiaryRepository {
     private val diaryByDate: MutableMap<LocalDate, MutableList<Diary>> = mutableMapOf()
 
