@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.data.diary
+package com.example.myapplication.picday.data.diary.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

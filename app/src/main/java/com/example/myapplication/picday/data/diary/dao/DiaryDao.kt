@@ -1,17 +1,18 @@
-package com.example.myapplication.picday.data.diary
+package com.example.myapplication.picday.data.diary.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.myapplication.picday.data.diary.entity.DiaryEntity
 
 @Dao
 interface DiaryDao {
     @Query("SELECT * FROM diary WHERE dateEpochDay = :dateEpochDay ORDER BY createdAt ASC")
     suspend fun getByDate(dateEpochDay: Long): List<DiaryEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(entity: DiaryEntity)
 
     @Update

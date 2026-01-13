@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.data.diary
+package com.example.myapplication.picday.domain.repository
 
 import com.example.myapplication.picday.domain.diary.Diary
 import java.time.LocalDate

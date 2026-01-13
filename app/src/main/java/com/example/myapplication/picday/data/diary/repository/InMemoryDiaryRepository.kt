@@ -1,7 +1,9 @@
-package com.example.myapplication.picday.data.diary
+package com.example.myapplication.picday.data.diary.repository
 
 import com.example.myapplication.picday.domain.diary.Diary
+import com.example.myapplication.picday.domain.repository.DiaryRepository
 import java.time.LocalDate
+import kotlin.collections.iterator
 
 class InMemoryDiaryRepository(
     seedData: List<Diary> = emptyList()

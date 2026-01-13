@@ -30,17 +30,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.ComponentActivity
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.picday.presentation.component.DiaryItemCard
 import com.example.myapplication.picday.presentation.navigation.WriteMode
 import java.time.LocalDate
 
 @Composable
 fun DiaryScreen(
-    viewModel: DiaryViewModel = viewModel(),
     selectedDate: LocalDate = LocalDate.now(),
     onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> }
 ) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
+    val viewModel: DiaryViewModel = hiltViewModel(activity)
     val uiState by viewModel.uiState.collectAsState()
     LaunchedEffect(selectedDate) {
         viewModel.onDateSelected(selectedDate)

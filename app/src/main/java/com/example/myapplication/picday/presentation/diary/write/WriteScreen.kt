@@ -7,6 +7,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.activity.ComponentActivity
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.picday.presentation.component.CircularPhotoPlaceholder
 import com.example.myapplication.picday.presentation.component.WriteTopBar
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
@@ -16,12 +18,13 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteScreen(
-    viewModel: DiaryViewModel,
     selectedDate: LocalDate,
     mode: WriteMode,
     onBack: () -> Unit,
     onSaveComplete: () -> Unit
 ) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
+    val viewModel: DiaryViewModel = hiltViewModel(activity)
     val uiState by viewModel.uiState.collectAsState()
     val writeState by viewModel.writeState.collectAsState()
 

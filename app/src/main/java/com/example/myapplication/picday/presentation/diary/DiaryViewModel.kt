@@ -1,9 +1,11 @@
 package com.example.myapplication.picday.presentation.diary
 
-import com.example.myapplication.picday.data.diary.DiaryRepository
+import com.example.myapplication.picday.domain.repository.DiaryRepository
 import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.diary.write.WriteUiMode
 import com.example.myapplication.picday.presentation.navigation.WriteMode
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
-class DiaryViewModel(
+@HiltViewModel
+class DiaryViewModel @Inject constructor(
     // Repository 생성 책임은 외부로 분리한다.
     private val repository: DiaryRepository
 ) : ViewModel() {
