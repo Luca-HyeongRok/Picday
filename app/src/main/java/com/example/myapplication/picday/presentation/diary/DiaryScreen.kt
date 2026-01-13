@@ -1,7 +1,5 @@
 package com.example.myapplication.picday.presentation.diary
 
-import java.time.LocalDate
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,11 +35,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.picday.domain.diary.Diary
+import java.time.LocalDate
 
 @Composable
 fun DiaryScreen(
     viewModel: DiaryViewModel = viewModel(),
-    selectedDate: LocalDate = LocalDate.now()
+    selectedDate: LocalDate = LocalDate.now(),
+    onWriteClick: (LocalDate) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     LaunchedEffect(selectedDate) {
@@ -71,7 +72,7 @@ fun DiaryScreen(
                 
                 // 추가 기록 버튼 (작게 표시)
                 OutlinedButton(
-                    onClick = { viewModel.addDiaryForDate(selectedDate) },
+                    onClick = { onWriteClick(uiState.selectedDate) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -82,7 +83,7 @@ fun DiaryScreen(
             } else {
                 // 기록 없음: 기록 추가 버튼 강조
                 Button(
-                    onClick = { viewModel.addDiaryForDate(selectedDate) },
+                    onClick = { onWriteClick(uiState.selectedDate) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp), // 높이를 주어 빈 공간 채움
@@ -136,7 +137,7 @@ fun DiaryScreen(
 }
 
 @Composable
-fun DiaryItemCard(item: DiaryItem) {
+fun DiaryItemCard(item: Diary) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -158,28 +159,17 @@ fun DiaryItemCard(item: DiaryItem) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(end = 16.dp)
             ) {
-                // 날짜 문자열 분리 (YYYY.MM.DD 형태 가정)
-                val dateParts = item.date.split(".")
-                if (dateParts.size >= 3) {
-                    Text(
-                        text = dateParts[2], // 일
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "${dateParts[1]}.${dateParts[0]}", // 월.년
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    // 예외적인 경우 전체 날짜 표시
-                    Text(
-                        text = item.date,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = "%02d".format(item.date.dayOfMonth),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "%02d.%04d".format(item.date.monthValue, item.date.year),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             // 제목 + 내용 미리보기 영역
