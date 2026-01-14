@@ -178,16 +178,24 @@ private fun PhotoThumbnail(
 
         IconButton(
             onClick = onRemove,
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            modifier = Modifier.size(36.dp) // 터치 영역
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = null,
-                tint = Color.White
-            )
+            Box(
+                modifier = Modifier
+                    .size(20.dp) // 보이는 동그라미
+                    .background(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "사진 삭제",
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
         }
     }
 }
@@ -200,9 +208,10 @@ private fun CoverPhoto(uri: String) {
     LaunchedEffect(uri) {
         bitmap = withContext(Dispatchers.IO) {
             runCatching {
-                context.contentResolver.openInputStream(android.net.Uri.parse(uri))?.use { stream ->
-                    BitmapFactory.decodeStream(stream)
-                }
+                context.contentResolver.openInputStream(android.net.Uri.parse(uri))
+                    ?.use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
             }.getOrNull()
         }
     }
