@@ -79,6 +79,16 @@ data
 - release 빌드: Room만 사용
 - WriteScreen에서 다중 사진 추가/수정 및 썸네일 미리보기 지원
 
+## 문서
+- [PRD](docs/PRD.md)
+
+## Issue Templates
+- GitHub에서 새 이슈 생성 시 템플릿을 선택해 사용한다.
+- 작업 성격에 맞는 템플릿을 고른 뒤 제목과 체크리스트를 업데이트한다.
+
+## Design Docs
+- [Issue 1 – Edit Mode Design](docs/design/issue-1-edit-mode.md)
+
 ## 향후 계획
 - 카메라 촬영 기능 추가 및 갤러리 개선
 - 편집 모드 사진 diff 처리(유지/삭제/추가) 고도화
