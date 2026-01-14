@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -152,13 +151,12 @@ fun DiaryRecordCard(
 @Composable
 private fun CoverPhotoOrIcon(uri: String?) {
     if (uri == null) {
-        Icon(
-            imageVector = Icons.Default.PhotoCamera,
-            contentDescription = null,
+        Box(
             modifier = Modifier
                 .padding(end = 16.dp)
-                .size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
         )
         return
     }
@@ -188,13 +186,12 @@ private fun CoverPhotoOrIcon(uri: String?) {
             contentScale = ContentScale.Crop
         )
     } else {
-        Icon(
-            imageVector = Icons.Default.PhotoCamera,
-            contentDescription = null,
+        Box(
             modifier = Modifier
                 .padding(end = 16.dp)
-                .size(48.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
         )
     }
 }
