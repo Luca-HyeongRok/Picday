@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.presentation.diary.write
+package com.example.myapplication.picday.presentation.write
 
 import androidx.lifecycle.ViewModel
 import com.example.myapplication.picday.domain.repository.DiaryRepository

@@ -5,9 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.myapplication.picday.presentation.diary.write.WriteScreen
-import com.example.myapplication.picday.presentation.diary.write.WriteUiMode
-import com.example.myapplication.picday.presentation.diary.write.WriteViewModel
+import com.example.myapplication.picday.presentation.write.WriteScreen
+import com.example.myapplication.picday.presentation.write.WriteUiMode
+import com.example.myapplication.picday.presentation.write.WriteViewModel
 import com.example.myapplication.picday.presentation.navigation.WriteMode
 import java.time.LocalDate
 
