@@ -52,7 +52,7 @@ fun DiaryScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            val latestRecord = uiState.items.lastOrNull()
+            val latestRecord = uiState.uiItems.lastOrNull()
             if (latestRecord != null) {
                 // 오늘의 기록 표시 (마지막에 추가된 기록)
                 DiaryItemCard(item = latestRecord)
@@ -98,8 +98,8 @@ fun DiaryScreen(
         }
 
         // 2. [최근 기록] 섹션 (스크롤 가능 영역)
-        val otherRecords = if (uiState.items.size > 1) {
-            uiState.items.dropLast(1)
+        val otherRecords = if (uiState.uiItems.size > 1) {
+            uiState.uiItems.dropLast(1)
         } else {
             emptyList()
         }

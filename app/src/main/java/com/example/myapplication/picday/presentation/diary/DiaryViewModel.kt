@@ -38,6 +38,7 @@ class DiaryViewModel @Inject constructor(
             id = diary.id,
             date = diary.date,
             title = diary.title,
+            previewContent = diary.previewContent,
             coverPhotoUri = deriveCoverPhotoUri(photos)
         )
     }
@@ -50,6 +51,7 @@ class DiaryViewModel @Inject constructor(
                 id = diary.id,
                 date = diary.date,
                 title = diary.title,
+                previewContent = diary.previewContent,
                 coverPhotoUri = deriveCoverPhotoUri(photos)
             )
         }
