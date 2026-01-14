@@ -18,6 +18,8 @@ class DiaryViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
+    private val _coverPhotoByDate = MutableStateFlow<Map<LocalDate, String?>>(emptyMap())
+    val coverPhotoByDate: StateFlow<Map<LocalDate, String?>> = _coverPhotoByDate.asStateFlow()
 
     init {
         updateUiForDate(LocalDate.now())
@@ -31,28 +33,34 @@ class DiaryViewModel @Inject constructor(
         return repository.hasAnyRecord(date)
     }
 
-    fun getDiaryUiItemForDate(date: LocalDate): DiaryUiItem? {
-        val diary = repository.getByDate(date).lastOrNull() ?: return null
-        val photos = repository.getPhotos(diary.id)
-        return DiaryUiItem(
-            id = diary.id,
-            date = diary.date,
-            title = diary.title,
-            previewContent = diary.previewContent,
-            coverPhotoUri = deriveCoverPhotoUri(photos)
-        )
+    fun preloadCoverPhotos(dates: List<LocalDate>) {
+        if (dates.isEmpty()) return
+        val coverMap = dates.associateWith { date ->
+            val diary = repository.getByDate(date).lastOrNull() ?: return@associateWith null
+            val photos = repository.getPhotos(diary.id)
+            deriveCoverPhotoUri(photos)
+        }
+        _coverPhotoByDate.update { current ->
+            current + coverMap
+        }
     }
 
     private fun updateUiForDate(date: LocalDate) {
         val items = repository.getByDate(date)
-        val uiItems = items.map { diary ->
+        var coverForDate: String? = null
+        val lastIndex = items.lastIndex
+        val uiItems = items.mapIndexed { index, diary ->
             val photos = repository.getPhotos(diary.id)
+            val coverPhotoUri = deriveCoverPhotoUri(photos)
+            if (index == lastIndex) {
+                coverForDate = coverPhotoUri
+            }
             DiaryUiItem(
                 id = diary.id,
                 date = diary.date,
                 title = diary.title,
                 previewContent = diary.previewContent,
-                coverPhotoUri = deriveCoverPhotoUri(photos)
+                coverPhotoUri = coverPhotoUri
             )
         }
         _uiState.update {
@@ -61,6 +69,9 @@ class DiaryViewModel @Inject constructor(
                 items = items,
                 uiItems = uiItems
             )
+        }
+        _coverPhotoByDate.update { current ->
+            current + mapOf(date to coverForDate)
         }
     }
 }
