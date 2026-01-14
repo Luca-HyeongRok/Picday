@@ -1,4 +1,6 @@
-package com.example.myapplication.picday.presentation.write
+package com.example.myapplication.picday.presentation.write.state
+
+import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 
 data class WriteState(
     val uiMode: WriteUiMode = WriteUiMode.VIEW,
