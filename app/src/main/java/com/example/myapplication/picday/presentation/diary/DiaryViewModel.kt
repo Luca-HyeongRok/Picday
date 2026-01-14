@@ -31,6 +31,17 @@ class DiaryViewModel @Inject constructor(
         return repository.hasAnyRecord(date)
     }
 
+    fun getDiaryUiItemForDate(date: LocalDate): DiaryUiItem? {
+        val diary = repository.getByDate(date).lastOrNull() ?: return null
+        val photos = repository.getPhotos(diary.id)
+        return DiaryUiItem(
+            id = diary.id,
+            date = diary.date,
+            title = diary.title,
+            coverPhotoUri = deriveCoverPhotoUri(photos)
+        )
+    }
+
     private fun updateUiForDate(date: LocalDate) {
         val items = repository.getByDate(date)
         val uiItems = items.map { diary ->
