@@ -89,6 +89,9 @@ data
 ## Design Docs
 - [Issue 1 – Edit Mode Design](docs/design/issue-1-edit-mode.md)
 
+## ✅ QA / Verification
+- [Manual QA Checklist v1](docs/qa/manual-checklist-v1.md)
+
 ## 향후 계획
 - 카메라 촬영 기능 추가 및 갤러리 개선
 - 편집 모드 사진 diff 처리(유지/삭제/추가) 고도화
