@@ -44,7 +44,8 @@ import java.time.LocalDate
 fun DiaryItemCard(
     item: DiaryUiItem,
     onClick: (() -> Unit)? = null,
-    onEditClick: () -> Unit = {}
+    onEditClick: () -> Unit = {},
+    showEditIcon: Boolean = true
 ) {
     DiaryRecordCard(
         date = item.date,
@@ -52,7 +53,8 @@ fun DiaryItemCard(
         previewContent = item.previewContent,
         coverPhotoUri = item.coverPhotoUri,
         onClick = onClick,
-        onEditClick = onEditClick
+        onEditClick = onEditClick,
+        showEditIcon = showEditIcon
     )
 }
 
@@ -63,7 +65,8 @@ fun DiaryRecordCard(
     previewContent: String,
     coverPhotoUri: String?,
     onClick: (() -> Unit)?,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    showEditIcon: Boolean = true
 ) {
     val content: @Composable () -> Unit = {
         Box {
@@ -107,17 +110,19 @@ fun DiaryRecordCard(
                 }
             }
 
-            IconButton(
-                onClick = onEditClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "기록 수정",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (showEditIcon) {
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "기록 수정",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

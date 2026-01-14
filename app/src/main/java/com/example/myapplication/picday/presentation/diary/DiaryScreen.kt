@@ -52,8 +52,9 @@ fun DiaryScreen(
             items(uiState.uiItems) { item ->
                 DiaryItemCard(
                     item = item,
-                    onClick = { onWriteClick(uiState.selectedDate, WriteMode.VIEW) },
-                    onEditClick = { onEditClick(item.id) }
+                    onClick = { onEditClick(item.id) },
+                    onEditClick = { onEditClick(item.id) },
+                    showEditIcon = false
                 )
             }
             if (uiState.uiItems.isEmpty()) {
