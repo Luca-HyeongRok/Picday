@@ -126,7 +126,7 @@ fun DiaryRecordCard(
                 }
             }
 
-            Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+            Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f))
         }
     }
 
@@ -162,7 +162,7 @@ private fun CoverPhotoOrIcon(uri: String?) {
                 .padding(end = 16.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f))
         )
         return
     }
@@ -197,7 +197,7 @@ private fun CoverPhotoOrIcon(uri: String?) {
                 .padding(end = 16.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f))
         )
     }
 }
