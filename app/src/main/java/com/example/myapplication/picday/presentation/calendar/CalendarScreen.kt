@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -23,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -167,7 +165,7 @@ fun CalendarScreen(
                                 day = day,
                                 isSelected = day.date == uiState.selectedDate,
                                 coverPhotoUri = coverPhotoByDate[day.date],
-                                onClick = { 
+                                onClick = {
                                     viewModel.onDateSelected(it)
                                     onDateSelected(it)
                                 }
@@ -233,24 +231,20 @@ fun DayCell(
 
             if (coverPhotoUri != null) {
                 DayCoverPhoto(uri = coverPhotoUri)
-            } else {
-                Icon(
-                    imageVector = Icons.Default.PhotoCamera,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
             }
 
             // 날짜 숫자 표시
             Text(
                 text = day.date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-                color = when {
-                    isSelected -> MaterialTheme.colorScheme.onPrimary
-                    isToday -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurface
+                style = if (isSelected) {
+                    MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                } else {
+                    MaterialTheme.typography.bodySmall
+                },
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
                 }
             )
         }
