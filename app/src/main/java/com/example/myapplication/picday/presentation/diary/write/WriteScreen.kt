@@ -1,7 +1,6 @@
 package com.example.myapplication.picday.presentation.diary.write
 
 import android.graphics.BitmapFactory
-import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,25 +43,46 @@ fun WriteScreen(
     onBack: () -> Unit,
     onSaveComplete: () -> Unit
 ) {
-    val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
-    val viewModel: DiaryViewModel = hiltViewModel(activity)
+    val viewModel: DiaryViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val writeState by viewModel.writeState.collectAsState()
 
     var title by rememberSaveable { mutableStateOf("") }
     var content by rememberSaveable { mutableStateOf("") }
-    val photoUris = rememberSaveable(
-        saver = listSaver(
-            save = { it.toList() },
-            restore = { it.toMutableStateList() }
+    val photoItems = rememberSaveable(
+        saver = listSaver<SnapshotStateList<WritePhotoItem>, List<String>>(
+            save = { list ->
+                list.map { listOf(it.id, it.uri, it.state.name) }
+            },
+            restore = { saved ->
+                saved.mapNotNull { data ->
+                    if (data.size == 3) {
+                        WritePhotoItem(
+                            id = data[0],
+                            uri = data[1],
+                            state = WritePhotoState.valueOf(data[2])
+                        )
+                    } else {
+                        null
+                    }
+                }.toMutableStateList()
+            }
         )
-    ) { mutableStateListOf<String>() }
+    ) { mutableStateListOf<WritePhotoItem>() }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            photoUris.addAll(uris.map { it.toString() })
+            photoItems.addAll(
+                uris.map { uri ->
+                    WritePhotoItem(
+                        id = System.nanoTime().toString(),
+                        uri = uri.toString(),
+                        state = WritePhotoState.NEW
+                    )
+                }
+            )
         }
     }
 
@@ -80,19 +101,27 @@ fun WriteScreen(
         viewModel.setWriteMode(mode)
         title = ""
         content = ""
-        photoUris.clear()
+        photoItems.clear()
     }
 
     LaunchedEffect(writeState.editingDiaryId, writeState.uiMode) {
         if (writeState.uiMode == WriteUiMode.ADD) {
             title = ""
             content = ""
-            photoUris.clear()
+            photoItems.clear()
         } else if (writeState.uiMode == WriteUiMode.EDIT && editingDiary != null) {
             title = editingDiary.title.orEmpty()
             content = editingDiary.previewContent
-            photoUris.clear()
-            photoUris.addAll(viewModel.getPhotoUris(editingDiary.id))
+            photoItems.clear()
+            photoItems.addAll(
+                viewModel.getPhotos(editingDiary.id).map { photo ->
+                    WritePhotoItem(
+                        id = photo.id,
+                        uri = photo.uri,
+                        state = WritePhotoState.KEEP
+                    )
+                }
+            )
         }
     }
 
@@ -103,12 +132,15 @@ fun WriteScreen(
                 onBack = onBack,
                 onSave = {
                     val normalizedTitle = title.trim().ifBlank { null }
+                    val retainedPhotoUris = photoItems
+                        .filter { it.state != WritePhotoState.DELETE }
+                        .map { it.uri }
                     // 저장 로직은 ViewModel에서 처리
                     viewModel.onSaveClicked(
                         date = selectedDate,
                         title = normalizedTitle,
                         content = content,
-                        photoUris = photoUris.toList()
+                        photoUris = retainedPhotoUris
                     )
                     onSaveComplete()
                 },
@@ -141,17 +173,23 @@ fun WriteScreen(
                     Text("사진 추가")
                 }
 
-                if (photoUris.isNotEmpty()) {
+                val visiblePhotoItems = photoItems.filter { it.state != WritePhotoState.DELETE }
+                if (visiblePhotoItems.isNotEmpty()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                     ) {
-                        items(photoUris, key = { it }) { uri ->
+                        items(visiblePhotoItems, key = { it.id }) { item ->
                             PhotoThumbnail(
-                                uri = uri,
-                                onRemove = { photoUris.remove(uri) }
+                                uri = item.uri,
+                                onRemove = {
+                                    val index = photoItems.indexOfFirst { it.id == item.id }
+                                    if (index >= 0) {
+                                        photoItems[index] = item.copy(state = WritePhotoState.DELETE)
+                                    }
+                                }
                             )
                         }
                     }

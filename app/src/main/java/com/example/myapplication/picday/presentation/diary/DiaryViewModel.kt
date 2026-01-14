@@ -81,6 +81,10 @@ class DiaryViewModel @Inject constructor(
         return repository.getPhotos(diaryId).map { it.uri }
     }
 
+    fun getPhotos(diaryId: String): List<com.example.myapplication.picday.domain.diary.DiaryPhoto> {
+        return repository.getPhotos(diaryId)
+    }
+
     private fun replacePhotos(diaryId: String, photoUris: List<String>) {
         repository.replacePhotos(diaryId, photoUris)
     }
