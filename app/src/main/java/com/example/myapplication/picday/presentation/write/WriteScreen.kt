@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.picday.BuildConfig
+import com.example.myapplication.picday.R
 import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.CircularPhotoPlaceholder
 import com.example.myapplication.picday.presentation.component.WriteTopBar
@@ -35,6 +37,7 @@ fun WriteScreen(
     selectedDate: LocalDate,
     items: List<Diary>,
     writeState: WriteState,
+    coverPhotoUri: String?,
     onBack: () -> Unit,
     onSave: () -> Unit,
     onAddClick: () -> Unit,
@@ -44,6 +47,7 @@ fun WriteScreen(
     onPhotosAdded: (List<String>) -> Unit,
     onPhotoRemoved: (String) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris ->
@@ -73,7 +77,11 @@ fun WriteScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            CircularPhotoPlaceholder()
+            if (coverPhotoUri != null) {
+                CoverPhoto(uri = coverPhotoUri)
+            } else {
+                CircularPhotoPlaceholder()
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -87,6 +95,32 @@ fun WriteScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("사진 추가")
+                }
+
+                if (BuildConfig.DEBUG) {
+                    OutlinedButton(
+                        onClick = {
+                            val existingUris = writeState.photoItems.map { it.uri }.toSet()
+                            val nextSampleUri = listOf(
+                                R.drawable.sample_photo_1,
+                                R.drawable.sample_photo_2,
+                                R.drawable.sample_photo_3,
+                                R.drawable.sample_photo_4
+                            )
+                                .map { resId ->
+                                    "android.resource://${context.packageName}/$resId"
+                                }
+                                .firstOrNull { it !in existingUris }
+                            if (nextSampleUri != null) {
+                                onPhotosAdded(listOf(nextSampleUri))
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Text("샘플 사진 추가 (DEBUG)")
+                    }
                 }
 
                 val visiblePhotoItems = writeState.photoItems.filter { it.state != WritePhotoState.DELETE }
@@ -170,6 +204,39 @@ private fun PhotoThumbnail(
                 imageVector = Icons.Default.Close,
                 contentDescription = null,
                 tint = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoverPhoto(uri: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var bitmap by remember(uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(uri) {
+        bitmap = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openInputStream(android.net.Uri.parse(uri))?.use { stream ->
+                    BitmapFactory.decodeStream(stream)
+                }
+            }.getOrNull()
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(220.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
         }
     }
