@@ -9,8 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.WriteTopBar
+import com.example.myapplication.picday.presentation.diary.DiaryUiItem
 import com.example.myapplication.picday.presentation.write.content.WriteContent
 import com.example.myapplication.picday.presentation.write.state.WriteState
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
@@ -20,7 +20,7 @@ import java.time.LocalDate
 @Composable
 fun WriteScreen(
     selectedDate: LocalDate,
-    items: List<Diary>,
+    items: List<DiaryUiItem>,
     writeState: WriteState,
     coverPhotoUri: String?,
     onBack: () -> Unit,

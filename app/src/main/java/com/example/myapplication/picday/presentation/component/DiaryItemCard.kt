@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +32,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.presentation.diary.DiaryUiItem
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +44,14 @@ fun DiaryItemCard(
     item: DiaryUiItem,
     onClick: (() -> Unit)? = null,
     onEditClick: () -> Unit = {},
-    showEditIcon: Boolean = true
+    showEditIcon: Boolean = true,
+    showThumbnail: Boolean = true,
+    thumbnailSize: Dp = 72.dp,
+    thumbnailEndPadding: Dp = 16.dp,
+    contentPaddingVertical: Dp = 16.dp,
+    showDivider: Boolean = false,
+    placeholderAlphaEmpty: Float = 0.16f,
+    placeholderAlphaLoading: Float = 0.22f
 ) {
     DiaryRecordCard(
         date = item.date,
@@ -54,7 +60,14 @@ fun DiaryItemCard(
         coverPhotoUri = item.coverPhotoUri,
         onClick = onClick,
         onEditClick = onEditClick,
-        showEditIcon = showEditIcon
+        showEditIcon = showEditIcon,
+        showThumbnail = showThumbnail,
+        thumbnailSize = thumbnailSize,
+        thumbnailEndPadding = thumbnailEndPadding,
+        contentPaddingVertical = contentPaddingVertical,
+        showDivider = showDivider,
+        placeholderAlphaEmpty = placeholderAlphaEmpty,
+        placeholderAlphaLoading = placeholderAlphaLoading
     )
 }
 
@@ -66,45 +79,60 @@ fun DiaryRecordCard(
     coverPhotoUri: String?,
     onClick: (() -> Unit)?,
     onEditClick: () -> Unit,
-    showEditIcon: Boolean = true
+    showEditIcon: Boolean = true,
+    showThumbnail: Boolean = true,
+    thumbnailSize: Dp = 72.dp,
+    thumbnailEndPadding: Dp = 16.dp,
+    contentPaddingVertical: Dp = 16.dp,
+    showDivider: Boolean = false,
+    placeholderAlphaEmpty: Float = 0.16f,
+    placeholderAlphaLoading: Float = 0.22f
 ) {
     val content: @Composable () -> Unit = {
         Column {
             Box {
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 16.dp, vertical = contentPaddingVertical)
                         .padding(end = 32.dp)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CoverPhotoOrIcon(uri = coverPhotoUri)
+                    if (showThumbnail) {
+                        CoverPhotoOrIcon(
+                            uri = coverPhotoUri,
+                            size = thumbnailSize,
+                            endPadding = thumbnailEndPadding,
+                            placeholderAlphaEmpty = placeholderAlphaEmpty,
+                            placeholderAlphaLoading = placeholderAlphaLoading
+                        )
+                    }
 
                     Column(modifier = Modifier.weight(1f)) {
                         val displayTitle = title?.takeIf { it.isNotBlank() }
                         if (displayTitle != null) {
                             Text(
                                 text = displayTitle,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         } else {
                             Text(
                                 text = "${date.monthValue}월 ${date.dayOfMonth}일의 기록",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
                             text = previewContent,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -125,18 +153,16 @@ fun DiaryRecordCard(
                     }
                 }
             }
-
-            Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.16f))
         }
     }
 
     if (onClick == null) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+            shadowElevation = 4.dp
         ) {
             content()
         }
@@ -144,10 +170,10 @@ fun DiaryRecordCard(
         Surface(
             onClick = onClick,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+            shadowElevation = 4.dp
         ) {
             content()
         }
@@ -155,14 +181,22 @@ fun DiaryRecordCard(
 }
 
 @Composable
-private fun CoverPhotoOrIcon(uri: String?) {
+private fun CoverPhotoOrIcon(
+    uri: String?,
+    size: Dp,
+    endPadding: Dp,
+    placeholderAlphaEmpty: Float,
+    placeholderAlphaLoading: Float
+) {
+    val shape = RoundedCornerShape(12.dp)
+    
     if (uri == null) {
         Box(
             modifier = Modifier
-                .padding(end = 16.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f))
+                .padding(end = endPadding)
+                .size(size)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = placeholderAlphaEmpty))
         )
         return
     }
@@ -185,19 +219,19 @@ private fun CoverPhotoOrIcon(uri: String?) {
             bitmap = bitmap!!.asImageBitmap(),
             contentDescription = null,
             modifier = Modifier
-                .padding(end = 16.dp)
-                .size(40.dp)
-                .clip(CircleShape)
+                .padding(end = endPadding)
+                .size(size)
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.surface),
             contentScale = ContentScale.Crop
         )
     } else {
         Box(
             modifier = Modifier
-                .padding(end = 16.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f))
+                .padding(end = endPadding)
+                .size(size)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = placeholderAlphaLoading))
         )
     }
 }

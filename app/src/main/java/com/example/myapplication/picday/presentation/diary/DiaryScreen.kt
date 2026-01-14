@@ -14,6 +14,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,8 +71,16 @@ fun DiaryScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
-            FloatingActionButton(onClick = { onWriteClick(uiState.selectedDate, WriteMode.ADD) }) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+        ) {
+            FloatingActionButton(
+                onClick = { onWriteClick(uiState.selectedDate, WriteMode.ADD) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
+            ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "기록 추가")
             }
         }

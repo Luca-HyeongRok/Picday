@@ -11,8 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.DiaryRecordCard
+import com.example.myapplication.picday.presentation.diary.DiaryUiItem
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 
@@ -20,7 +20,7 @@ import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 fun ColumnScope.WriteContent(
     uiMode: WriteUiMode,
     coverPhotoUri: String?,
-    items: List<Diary>,
+    items: List<DiaryUiItem>,
     title: String,
     content: String,
     photoItems: List<WritePhotoItem>,
@@ -55,9 +55,9 @@ fun ColumnScope.WriteContent(
 @Composable
 fun ColumnScope.WriteViewContent(
     coverPhotoUri: String?,
-    items: List<Diary>,
+    items: List<DiaryUiItem>,
     onAddClick: () -> Unit,
-    onEditClick: (Diary) -> Unit
+    onEditClick: (DiaryUiItem) -> Unit
 ) {
     Spacer(modifier = Modifier.height(24.dp))
 
@@ -80,7 +80,7 @@ fun ColumnScope.WriteViewContent(
         }
     } else {
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
         ) {
             items(items) { item ->
@@ -88,9 +88,11 @@ fun ColumnScope.WriteViewContent(
                     date = item.date,
                     title = item.title,
                     previewContent = item.previewContent,
-                    coverPhotoUri = null,
+                    coverPhotoUri = item.coverPhotoUri,
                     onClick = null,
-                    onEditClick = { onEditClick(item) }
+                    onEditClick = { onEditClick(item) },
+                    placeholderAlphaEmpty = 0.12f,
+                    placeholderAlphaLoading = 0.2f
                 )
             }
         }

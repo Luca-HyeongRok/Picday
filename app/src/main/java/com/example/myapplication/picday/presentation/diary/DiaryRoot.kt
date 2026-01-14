@@ -65,7 +65,7 @@ fun DiaryRoot(
         DiaryRootScreen.WRITE -> {
             WriteScreen(
                 selectedDate = selectedDate,
-                items = diaryState.items,
+                items = diaryState.uiItems,
                 writeState = writeState,
                 coverPhotoUri = coverPhotoUri,
                 onBack = onBack,
