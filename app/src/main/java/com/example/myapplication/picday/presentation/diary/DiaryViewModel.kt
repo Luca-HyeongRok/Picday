@@ -1,6 +1,7 @@
 package com.example.myapplication.picday.presentation.diary
 
 import com.example.myapplication.picday.domain.repository.DiaryRepository
+import com.example.myapplication.picday.domain.diary.deriveCoverPhotoUri
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
@@ -30,12 +31,35 @@ class DiaryViewModel @Inject constructor(
         return repository.hasAnyRecord(date)
     }
 
+    fun getDiaryUiItemForDate(date: LocalDate): DiaryUiItem? {
+        val diary = repository.getByDate(date).lastOrNull() ?: return null
+        val photos = repository.getPhotos(diary.id)
+        return DiaryUiItem(
+            id = diary.id,
+            date = diary.date,
+            title = diary.title,
+            previewContent = diary.previewContent,
+            coverPhotoUri = deriveCoverPhotoUri(photos)
+        )
+    }
+
     private fun updateUiForDate(date: LocalDate) {
         val items = repository.getByDate(date)
+        val uiItems = items.map { diary ->
+            val photos = repository.getPhotos(diary.id)
+            DiaryUiItem(
+                id = diary.id,
+                date = diary.date,
+                title = diary.title,
+                previewContent = diary.previewContent,
+                coverPhotoUri = deriveCoverPhotoUri(photos)
+            )
+        }
         _uiState.update {
             it.copy(
                 selectedDate = date,
-                items = items
+                items = items,
+                uiItems = uiItems
             )
         }
     }

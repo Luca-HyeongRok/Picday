@@ -100,6 +100,12 @@ class WriteViewModel @Inject constructor(
         }
     }
 
+    fun getCoverPhotoUri(): String? {
+        return _uiState.value.photoItems.firstOrNull { item ->
+            item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW
+        }?.uri
+    }
+
     private fun resetForAdd() {
         _uiState.update {
             it.copy(
