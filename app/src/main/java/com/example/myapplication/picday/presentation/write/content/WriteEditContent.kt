@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.BuildConfig
 import com.example.myapplication.picday.R
-import com.example.myapplication.picday.presentation.component.CircularPhotoPlaceholder
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoState
 import kotlinx.coroutines.Dispatchers
@@ -52,19 +52,33 @@ fun ColumnScope.WriteEditContent(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
+    // Cover Photo Area
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
+    }
 
     Spacer(modifier = Modifier.height(32.dp))
 
-    OutlinedButton(
+    // Add Photo Button
+    Button(
         onClick = {
             photoPickerLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
-        Text("사진 추가")
+        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("사진 추가하기", style = MaterialTheme.typography.titleSmall)
     }
 
     if (BuildConfig.DEBUG) {
@@ -87,7 +101,8 @@ fun ColumnScope.WriteEditContent(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp)
+                .padding(top = 8.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("샘플 사진 추가 (DEBUG)")
         }
@@ -99,7 +114,7 @@ fun ColumnScope.WriteEditContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp)
+                .padding(top = 16.dp)
         ) {
             items(visiblePhotoItems, key = { it.id }) { item ->
                 PhotoThumbnail(
@@ -110,18 +125,25 @@ fun ColumnScope.WriteEditContent(
         }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(24.dp))
 
+    // Title Field
     OutlinedTextField(
         value = title,
         onValueChange = onTitleChange,
         modifier = Modifier.fillMaxWidth(),
         label = { Text("제목") },
-        singleLine = true
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        )
     )
 
     Spacer(modifier = Modifier.height(16.dp))
 
+    // Content Field
     OutlinedTextField(
         value = content,
         onValueChange = onContentChange,
@@ -129,7 +151,12 @@ fun ColumnScope.WriteEditContent(
             .fillMaxWidth()
             .weight(1f),
         label = { Text("오늘의 기록") },
-        placeholder = { Text("오늘의 기억을 남겨보세요") }
+        placeholder = { Text("오늘의 기억을 남겨보세요") },
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        )
     )
 }
 
@@ -138,7 +165,21 @@ internal fun WriteCoverPhoto(coverPhotoUri: String?) {
     if (coverPhotoUri != null) {
         CoverPhoto(uri = coverPhotoUri)
     } else {
-        CircularPhotoPlaceholder()
+        // Rounded Placeholder
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add, // Or a Camera icon if available, sticking to Add/Edit vibe
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                modifier = Modifier.size(48.dp)
+            )
+        }
     }
 }
 
@@ -178,11 +219,11 @@ private fun PhotoThumbnail(
 
         IconButton(
             onClick = onRemove,
-            modifier = Modifier.size(36.dp) // 터치 영역
+            modifier = Modifier.size(32.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(20.dp) // 보이는 동그라미
+                    .size(20.dp)
                     .background(
                         color = Color.Black.copy(alpha = 0.6f),
                         shape = CircleShape
@@ -219,7 +260,7 @@ private fun CoverPhoto(uri: String) {
     Box(
         modifier = Modifier
             .size(220.dp)
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {

@@ -11,8 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.DiaryRecordCard
+import com.example.myapplication.picday.presentation.diary.DiaryUiItem
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 
@@ -20,7 +25,7 @@ import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 fun ColumnScope.WriteContent(
     uiMode: WriteUiMode,
     coverPhotoUri: String?,
-    items: List<Diary>,
+    items: List<DiaryUiItem>,
     title: String,
     content: String,
     photoItems: List<WritePhotoItem>,
@@ -55,9 +60,9 @@ fun ColumnScope.WriteContent(
 @Composable
 fun ColumnScope.WriteViewContent(
     coverPhotoUri: String?,
-    items: List<Diary>,
+    items: List<DiaryUiItem>,
     onAddClick: () -> Unit,
-    onEditClick: (Diary) -> Unit
+    onEditClick: (DiaryUiItem) -> Unit
 ) {
     Spacer(modifier = Modifier.height(24.dp))
 
@@ -72,15 +77,22 @@ fun ColumnScope.WriteViewContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.weight(1f))
-        OutlinedButton(
+        Button(
             onClick = onAddClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
-            Text("오늘의 첫 번째 기록 추가하기")
+            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("오늘의 첫 번째 기록 추가하기", style = MaterialTheme.typography.titleSmall)
         }
     } else {
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
         ) {
             items(items) { item ->
@@ -88,20 +100,29 @@ fun ColumnScope.WriteViewContent(
                     date = item.date,
                     title = item.title,
                     previewContent = item.previewContent,
-                    coverPhotoUri = null,
+                    coverPhotoUri = item.coverPhotoUri,
                     onClick = null,
-                    onEditClick = { onEditClick(item) }
+                    onEditClick = { onEditClick(item) },
+                    placeholderAlphaEmpty = 0.12f,
+                    placeholderAlphaLoading = 0.2f
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(
+        Button(
             onClick = onAddClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
-            Text("기록 추가하기")
+            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("기록 추가하기", style = MaterialTheme.typography.titleSmall)
         }
     }
 }
