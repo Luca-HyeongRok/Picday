@@ -115,7 +115,7 @@ fun DiaryRecordCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
-                    contentDescription = null,
+                    contentDescription = "기록 수정",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
