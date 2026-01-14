@@ -18,6 +18,7 @@ import com.example.myapplication.picday.presentation.diary.DiaryViewModel
 import java.time.LocalDate
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
@@ -51,7 +52,11 @@ fun MainNavHost(
             DiaryRoot(
                 screen = DiaryRootScreen.DIARY,
                 selectedDate = selectedDate,
-                onWriteClick = { date, mode -> navController.navigate(Screen.Write.createRoute(date, mode)) }
+                onWriteClick = { date, mode -> navController.navigate(Screen.Write.createRoute(date, mode)) },
+                onEditClick = { diaryId ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("editDiaryId", diaryId)
+                    navController.navigate(Screen.Write.createRoute(selectedDate, WriteMode.VIEW))
+                }
             )
         }
         composable(
@@ -71,10 +76,18 @@ fun MainNavHost(
             val date = LocalDate.parse(Uri.decode(dateArg))
             val modeArg = backStackEntry.arguments?.getString("mode") ?: WriteMode.ADD.name
             val mode = WriteMode.valueOf(modeArg)
+            val previousEntry = navController.previousBackStackEntry
+            val editDiaryId = previousEntry?.savedStateHandle?.get<String>("editDiaryId")
+            LaunchedEffect(editDiaryId) {
+                if (editDiaryId != null) {
+                    previousEntry.savedStateHandle.remove<String>("editDiaryId")
+                }
+            }
             DiaryRoot(
                 screen = DiaryRootScreen.WRITE,
                 selectedDate = date,
                 writeMode = mode,
+                editDiaryId = editDiaryId,
                 onBack = { navController.popBackStack() },
                 onSaveComplete = { navController.popBackStack() },
             )

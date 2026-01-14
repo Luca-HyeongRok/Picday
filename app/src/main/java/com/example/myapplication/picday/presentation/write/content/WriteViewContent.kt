@@ -89,7 +89,7 @@ fun ColumnScope.WriteViewContent(
                     title = item.title,
                     previewContent = item.previewContent,
                     coverPhotoUri = null,
-                    onClick = {},
+                    onClick = null,
                     onEditClick = { onEditClick(item) }
                 )
             }

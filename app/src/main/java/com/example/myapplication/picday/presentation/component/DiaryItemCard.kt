@@ -44,7 +44,7 @@ import java.time.LocalDate
 @Composable
 fun DiaryItemCard(
     item: DiaryUiItem,
-    onClick: () -> Unit = {},
+    onClick: (() -> Unit)? = null,
     onEditClick: () -> Unit = {}
 ) {
     DiaryRecordCard(
@@ -63,18 +63,10 @@ fun DiaryRecordCard(
     title: String?,
     previewContent: String,
     coverPhotoUri: String?,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     onEditClick: () -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
+    val content: @Composable () -> Unit = {
         Box {
             Row(
                 modifier = Modifier
@@ -128,6 +120,31 @@ fun DiaryRecordCard(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+
+    if (onClick == null) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            content()
+        }
+    } else {
+        Card(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            content()
         }
     }
 }

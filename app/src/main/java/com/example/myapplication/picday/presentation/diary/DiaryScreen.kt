@@ -34,7 +34,8 @@ import java.time.LocalDate
 @Composable
 fun DiaryScreen(
     uiState: DiaryUiState,
-    onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> }
+    onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> },
+    onEditClick: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -55,7 +56,11 @@ fun DiaryScreen(
             val latestRecord = uiState.uiItems.lastOrNull()
             if (latestRecord != null) {
                 // 오늘의 기록 표시 (마지막에 추가된 기록)
-                DiaryItemCard(item = latestRecord)
+                DiaryItemCard(
+                    item = latestRecord,
+                    onClick = { onWriteClick(uiState.selectedDate, WriteMode.VIEW) },
+                    onEditClick = { onEditClick(latestRecord.id) }
+                )
 
                 // 추가 기록 버튼 (작게 표시)
                 OutlinedButton(
@@ -118,7 +123,11 @@ fun DiaryScreen(
                     contentPadding = PaddingValues(bottom = 32.dp)
                 ) {
                     items(otherRecords) { item ->
-                        DiaryItemCard(item = item)
+                        DiaryItemCard(
+                            item = item,
+                            onClick = { onWriteClick(uiState.selectedDate, WriteMode.VIEW) },
+                            onEditClick = { onEditClick(item.id) }
+                        )
                     }
                 }
             }
