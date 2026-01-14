@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.presentation.write
+package com.example.myapplication.picday.presentation.write.photo
 
 data class WritePhotoItem(
     val id: String,

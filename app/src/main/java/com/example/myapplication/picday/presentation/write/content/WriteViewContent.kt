@@ -1,4 +1,4 @@
-package com.example.myapplication.picday.presentation.write
+package com.example.myapplication.picday.presentation.write.content
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,13 +13,58 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.DiaryDetailCard
+import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
+import com.example.myapplication.picday.presentation.write.state.WriteUiMode
+
+@Composable
+fun ColumnScope.WriteContent(
+    uiMode: WriteUiMode,
+    coverPhotoUri: String?,
+    items: List<Diary>,
+    title: String,
+    content: String,
+    photoItems: List<WritePhotoItem>,
+    onAddClick: () -> Unit,
+    onEditClick: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onContentChange: (String) -> Unit,
+    onPhotosAdded: (List<String>) -> Unit,
+    onPhotoRemoved: (String) -> Unit
+) {
+    if (uiMode == WriteUiMode.VIEW) {
+        WriteViewContent(
+            coverPhotoUri = coverPhotoUri,
+            items = items,
+            onAddClick = onAddClick,
+            onEditClick = { diary -> onEditClick(diary.id) }
+        )
+    } else {
+        WriteEditContent(
+            coverPhotoUri = coverPhotoUri,
+            photoItems = photoItems,
+            title = title,
+            content = content,
+            onTitleChange = onTitleChange,
+            onContentChange = onContentChange,
+            onPhotosAdded = onPhotosAdded,
+            onPhotoRemoved = onPhotoRemoved
+        )
+    }
+}
 
 @Composable
 fun ColumnScope.WriteViewContent(
+    coverPhotoUri: String?,
     items: List<Diary>,
     onAddClick: () -> Unit,
     onEditClick: (Diary) -> Unit
 ) {
+    Spacer(modifier = Modifier.height(24.dp))
+
+    WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
+
+    Spacer(modifier = Modifier.height(32.dp))
+
     if (items.isEmpty()) {
         Text(
             text = "이 날의 기록이 없습니다.",

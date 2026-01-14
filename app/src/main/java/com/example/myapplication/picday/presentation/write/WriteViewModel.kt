@@ -2,6 +2,10 @@ package com.example.myapplication.picday.presentation.write
 
 import androidx.lifecycle.ViewModel
 import com.example.myapplication.picday.domain.repository.DiaryRepository
+import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
+import com.example.myapplication.picday.presentation.write.photo.WritePhotoState
+import com.example.myapplication.picday.presentation.write.state.WriteState
+import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
