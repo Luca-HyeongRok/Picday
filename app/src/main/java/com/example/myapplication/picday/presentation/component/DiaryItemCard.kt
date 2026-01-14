@@ -3,6 +3,7 @@ package com.example.myapplication.picday.presentation.component
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,10 +39,35 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.presentation.diary.DiaryUiItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 @Composable
-fun DiaryItemCard(item: DiaryUiItem) {
+fun DiaryItemCard(
+    item: DiaryUiItem,
+    onClick: () -> Unit = {},
+    onEditClick: () -> Unit = {}
+) {
+    DiaryRecordCard(
+        date = item.date,
+        title = item.title,
+        previewContent = item.previewContent,
+        coverPhotoUri = item.coverPhotoUri,
+        onClick = onClick,
+        onEditClick = onEditClick
+    )
+}
+
+@Composable
+fun DiaryRecordCard(
+    date: LocalDate,
+    title: String?,
+    previewContent: String,
+    coverPhotoUri: String?,
+    onClick: () -> Unit,
+    onEditClick: () -> Unit
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -47,41 +75,57 @@ fun DiaryItemCard(item: DiaryUiItem) {
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(vertical = 20.dp, horizontal = 24.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CoverPhotoOrIcon(uri = item.coverPhotoUri)
+        Box {
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 20.dp, horizontal = 24.dp)
+                    .padding(end = 36.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CoverPhotoOrIcon(uri = coverPhotoUri)
 
-            Column(modifier = Modifier.weight(1f)) {
-                val title = item.title
-                if (!title.isNullOrBlank()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    val displayTitle = title?.takeIf { it.isNotBlank() }
+                    if (displayTitle != null) {
+                        Text(
+                            text = displayTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    } else {
+                        Text(
+                            text = "${date.monthValue}월 ${date.dayOfMonth}일의 기록",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                } else {
-                    Text(
-                        text = "${item.date.monthValue}월 ${item.date.dayOfMonth}일의 기록",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = previewContent,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.2
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = item.previewContent,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.2
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
