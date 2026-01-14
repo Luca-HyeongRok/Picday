@@ -40,9 +40,10 @@ fun CalendarScreen(
     onDateSelected: (LocalDate) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val coverPhotoByDate by diaryViewModel.coverPhotoByDate.collectAsState()
 
-    val coverPhotoByDate = uiState.calendarDays.associate { day ->
-        day.date to diaryViewModel.getDiaryUiItemForDate(day.date)?.coverPhotoUri
+    LaunchedEffect(uiState.calendarDays) {
+        diaryViewModel.preloadCoverPhotos(uiState.calendarDays.map { it.date })
     }
 
     Box(
