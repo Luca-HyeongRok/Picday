@@ -20,6 +20,13 @@ class InMemoryDiaryRepository(
         return diaryByDate[date]?.toList() ?: emptyList()
     }
 
+    override fun getDiaryById(diaryId: String): Diary? {
+        for (diaries in diaryByDate.values) {
+            diaries.firstOrNull { it.id == diaryId }?.let { return it }
+        }
+        return null
+    }
+
     override fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         val diary = Diary(
             id = System.currentTimeMillis().toString(),

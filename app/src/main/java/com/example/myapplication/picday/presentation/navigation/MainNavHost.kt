@@ -3,11 +3,7 @@ package com.example.myapplication.picday.presentation.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,11 +12,13 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.myapplication.picday.presentation.common.SharedViewModel
 import com.example.myapplication.picday.presentation.calendar.CalendarScreen
-import com.example.myapplication.picday.presentation.diary.DiaryScreen
+import com.example.myapplication.picday.presentation.diary.DiaryRoot
+import com.example.myapplication.picday.presentation.diary.DiaryRootScreen
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.presentation.diary.write.WriteScreen
 import java.time.LocalDate
-import androidx.activity.ComponentActivity
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun MainNavHost(
@@ -29,9 +27,6 @@ fun MainNavHost(
     innerPadding: PaddingValues
 ) {
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
-    val activity = LocalContext.current as ComponentActivity
-    // 하위 화면에서 동일 ViewModel을 공유하도록 Activity 스코프를 사용한다.
-    val diaryViewModel: DiaryViewModel = hiltViewModel(activity)
 
     NavHost(
         navController = navController,
@@ -39,6 +34,7 @@ fun MainNavHost(
         modifier = Modifier.padding(innerPadding)
     ) {
         composable(Screen.Calendar.route) {
+            val diaryViewModel: DiaryViewModel = hiltViewModel()
             CalendarScreen(
                 onDateSelected = { date ->
                     sharedViewModel.updateSelectedDate(date)
@@ -52,11 +48,10 @@ fun MainNavHost(
             )
         }
         composable(Screen.Diary.route) {
-            DiaryScreen(
+            DiaryRoot(
+                screen = DiaryRootScreen.DIARY,
                 selectedDate = selectedDate,
-                onWriteClick = { date, mode ->
-                    navController.navigate(Screen.Write.createRoute(date, mode))
-                }
+                onWriteClick = { date, mode -> navController.navigate(Screen.Write.createRoute(date, mode)) }
             )
         }
         composable(
@@ -76,9 +71,10 @@ fun MainNavHost(
             val date = LocalDate.parse(Uri.decode(dateArg))
             val modeArg = backStackEntry.arguments?.getString("mode") ?: WriteMode.ADD.name
             val mode = WriteMode.valueOf(modeArg)
-            WriteScreen(
+            DiaryRoot(
+                screen = DiaryRootScreen.WRITE,
                 selectedDate = date,
-                mode = mode,
+                writeMode = mode,
                 onBack = { navController.popBackStack() },
                 onSaveComplete = { navController.popBackStack() },
             )

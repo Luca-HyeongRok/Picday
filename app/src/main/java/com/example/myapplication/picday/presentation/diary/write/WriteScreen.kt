@@ -11,140 +11,56 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import com.example.myapplication.picday.domain.diary.Diary
 import com.example.myapplication.picday.presentation.component.CircularPhotoPlaceholder
 import com.example.myapplication.picday.presentation.component.WriteTopBar
-import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.presentation.navigation.WriteMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WriteScreen(
     selectedDate: LocalDate,
-    mode: WriteMode,
+    items: List<Diary>,
+    writeState: WriteState,
     onBack: () -> Unit,
-    onSaveComplete: () -> Unit
+    onSave: () -> Unit,
+    onAddClick: () -> Unit,
+    onEditClick: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onContentChange: (String) -> Unit,
+    onPhotosAdded: (List<String>) -> Unit,
+    onPhotoRemoved: (String) -> Unit
 ) {
-    val viewModel: DiaryViewModel = hiltViewModel()
-    val uiState by viewModel.uiState.collectAsState()
-    val writeState by viewModel.writeState.collectAsState()
-
-    var title by rememberSaveable { mutableStateOf("") }
-    var content by rememberSaveable { mutableStateOf("") }
-    val photoItems = rememberSaveable(
-        saver = listSaver<SnapshotStateList<WritePhotoItem>, List<String>>(
-            save = { list ->
-                list.map { listOf(it.id, it.uri, it.state.name) }
-            },
-            restore = { saved ->
-                saved.mapNotNull { data ->
-                    if (data.size == 3) {
-                        WritePhotoItem(
-                            id = data[0],
-                            uri = data[1],
-                            state = WritePhotoState.valueOf(data[2])
-                        )
-                    } else {
-                        null
-                    }
-                }.toMutableStateList()
-            }
-        )
-    ) { mutableStateListOf<WritePhotoItem>() }
-
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            photoItems.addAll(
-                uris.map { uri ->
-                    WritePhotoItem(
-                        id = System.nanoTime().toString(),
-                        uri = uri.toString(),
-                        state = WritePhotoState.NEW
-                    )
-                }
-            )
+            onPhotosAdded(uris.map { it.toString() })
         }
     }
 
-    val items = uiState.items
     val isEditMode = writeState.uiMode != WriteUiMode.VIEW
-    val editingDiary = items.firstOrNull { it.id == writeState.editingDiaryId }
-
-    // 날짜 변경 시 ViewModel 동기화
-    LaunchedEffect(selectedDate) {
-        viewModel.onDateSelected(selectedDate)
-    }
-
-    // 편집 대상 변경 시 입력값 세팅
-    LaunchedEffect(selectedDate, mode) {
-        // 화면 진입 시 모드를 ViewModel로 위임
-        viewModel.setWriteMode(mode)
-        title = ""
-        content = ""
-        photoItems.clear()
-    }
-
-    LaunchedEffect(writeState.editingDiaryId, writeState.uiMode) {
-        if (writeState.uiMode == WriteUiMode.ADD) {
-            title = ""
-            content = ""
-            photoItems.clear()
-        } else if (writeState.uiMode == WriteUiMode.EDIT && editingDiary != null) {
-            title = editingDiary.title.orEmpty()
-            content = editingDiary.previewContent
-            photoItems.clear()
-            photoItems.addAll(
-                viewModel.getPhotos(editingDiary.id).map { photo ->
-                    WritePhotoItem(
-                        id = photo.id,
-                        uri = photo.uri,
-                        state = WritePhotoState.KEEP
-                    )
-                }
-            )
-        }
-    }
 
     Scaffold(
         topBar = {
             WriteTopBar(
                 date = selectedDate,
                 onBack = onBack,
-                onSave = {
-                    val normalizedTitle = title.trim().ifBlank { null }
-                    val retainedPhotoUris = photoItems
-                        .filter { it.state != WritePhotoState.DELETE }
-                        .map { it.uri }
-                    // 저장 로직은 ViewModel에서 처리
-                    viewModel.onSaveClicked(
-                        date = selectedDate,
-                        title = normalizedTitle,
-                        content = content,
-                        photoUris = retainedPhotoUris
-                    )
-                    onSaveComplete()
-                },
-                canSave = isEditMode && content.isNotBlank()
+                onSave = onSave,
+                canSave = isEditMode && writeState.content.isNotBlank()
             )
         }
     ) { padding ->
@@ -173,7 +89,7 @@ fun WriteScreen(
                     Text("사진 추가")
                 }
 
-                val visiblePhotoItems = photoItems.filter { it.state != WritePhotoState.DELETE }
+                val visiblePhotoItems = writeState.photoItems.filter { it.state != WritePhotoState.DELETE }
                 if (visiblePhotoItems.isNotEmpty()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -184,12 +100,7 @@ fun WriteScreen(
                         items(visiblePhotoItems, key = { it.id }) { item ->
                             PhotoThumbnail(
                                 uri = item.uri,
-                                onRemove = {
-                                    val index = photoItems.indexOfFirst { it.id == item.id }
-                                    if (index >= 0) {
-                                        photoItems[index] = item.copy(state = WritePhotoState.DELETE)
-                                    }
-                                }
+                                onRemove = { onPhotoRemoved(item.id) }
                             )
                         }
                     }
@@ -198,20 +109,16 @@ fun WriteScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 WriteEditContent(
-                    title = title,
-                    content = content,
-                    onTitleChange = { title = it },
-                    onContentChange = { content = it }
+                    title = writeState.title,
+                    content = writeState.content,
+                    onTitleChange = onTitleChange,
+                    onContentChange = onContentChange
                 )
             } else {
                 WriteViewContent(
                     items = items,
-                    onAddClick = {
-                        viewModel.onAddClicked()
-                    },
-                    onEditClick = { diary ->
-                        viewModel.onEditClicked(diary.id)
-                    }
+                    onAddClick = onAddClick,
+                    onEditClick = { diary -> onEditClick(diary.id) }
                 )
             }
         }

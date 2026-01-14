@@ -23,31 +23,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.activity.ComponentActivity
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.picday.presentation.component.DiaryItemCard
 import com.example.myapplication.picday.presentation.navigation.WriteMode
 import java.time.LocalDate
 
 @Composable
 fun DiaryScreen(
-    selectedDate: LocalDate = LocalDate.now(),
+    uiState: DiaryUiState,
     onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> }
 ) {
-    val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
-    val viewModel: DiaryViewModel = hiltViewModel(activity)
-    val uiState by viewModel.uiState.collectAsState()
-    LaunchedEffect(selectedDate) {
-        viewModel.onDateSelected(selectedDate)
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -24,6 +24,10 @@ class RoomDiaryRepository(
         diaryDao.getByDate(date.toEpochDay()).map { it.toDomain() }
     }
 
+    override fun getDiaryById(diaryId: String): Diary? = runBlocking(Dispatchers.IO) {
+        diaryDao.getById(diaryId)?.toDomain()
+    }
+
     override fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         addDiaryForDate(date, title, content, emptyList())
     }
