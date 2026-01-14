@@ -16,6 +16,10 @@
   - 썸네일 미리보기
   - 개별 삭제 버튼
   - 저장 시 `photoUris: List<String>` ViewModel로 전달
+- UI/UX 고도화
+  - 다이어리 리스트: 카드형 UI 도입 (Elevation, Rounded Corner, 3줄 미리보기)
+  - 작성 화면: 버튼 및 입력폼 디자인 개선 (Filled Button, Rounded Shape)
+  - 메인 화면: 하단 내비게이션 바 상단 라운딩 처리
 
 ## 4. 다음 개발 범위 (Next Scope)
 1) 다이어리 편집 모드
