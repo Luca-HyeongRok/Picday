@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.domain.diary.Diary
-import com.example.myapplication.picday.presentation.component.DiaryDetailCard
+import com.example.myapplication.picday.presentation.component.DiaryRecordCard
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 
@@ -84,8 +84,12 @@ fun ColumnScope.WriteViewContent(
             modifier = Modifier.weight(1f)
         ) {
             items(items) { item ->
-                DiaryDetailCard(
-                    item = item,
+                DiaryRecordCard(
+                    date = item.date,
+                    title = item.title,
+                    previewContent = item.previewContent,
+                    coverPhotoUri = null,
+                    onClick = null,
                     onEditClick = { onEditClick(item) }
                 )
             }

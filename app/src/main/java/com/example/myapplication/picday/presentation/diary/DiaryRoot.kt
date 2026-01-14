@@ -22,8 +22,10 @@ fun DiaryRoot(
     selectedDate: LocalDate,
     writeMode: WriteMode = WriteMode.VIEW,
     onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> },
+    onEditClick: (String) -> Unit = {},
     onBack: () -> Unit = {},
-    onSaveComplete: () -> Unit = {}
+    onSaveComplete: () -> Unit = {},
+    editDiaryId: String? = null
 ) {
     val diaryViewModel: DiaryViewModel = hiltViewModel()
     val writeViewModel: WriteViewModel = hiltViewModel()
@@ -38,8 +40,12 @@ fun DiaryRoot(
         diaryViewModel.onDateSelected(selectedDate)
     }
 
-    LaunchedEffect(screen, writeMode) {
+    LaunchedEffect(screen, writeMode, editDiaryId) {
         if (screen == DiaryRootScreen.WRITE) {
+            if (editDiaryId != null) {
+                writeViewModel.onEditClicked(editDiaryId)
+                return@LaunchedEffect
+            }
             val uiMode = when (writeMode) {
                 WriteMode.ADD -> WriteUiMode.ADD
                 WriteMode.VIEW -> WriteUiMode.VIEW
@@ -52,7 +58,8 @@ fun DiaryRoot(
         DiaryRootScreen.DIARY -> {
             DiaryScreen(
                 uiState = diaryState,
-                onWriteClick = onWriteClick
+                onWriteClick = onWriteClick,
+                onEditClick = onEditClick
             )
         }
         DiaryRootScreen.WRITE -> {

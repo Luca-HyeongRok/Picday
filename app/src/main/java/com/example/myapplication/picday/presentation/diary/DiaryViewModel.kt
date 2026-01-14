@@ -36,7 +36,9 @@ class DiaryViewModel @Inject constructor(
     fun preloadCoverPhotos(dates: List<LocalDate>) {
         if (dates.isEmpty()) return
         val coverMap = dates.associateWith { date ->
-            val diary = repository.getByDate(date).lastOrNull() ?: return@associateWith null
+            val diary = repository.getByDate(date)
+                .maxByOrNull { it.createdAt }
+                ?: return@associateWith null
             val photos = repository.getPhotos(diary.id)
             deriveCoverPhotoUri(photos)
         }
@@ -47,6 +49,7 @@ class DiaryViewModel @Inject constructor(
 
     private fun updateUiForDate(date: LocalDate) {
         val items = repository.getByDate(date)
+            .sortedBy { it.createdAt }
         var coverForDate: String? = null
         val lastIndex = items.lastIndex
         val uiItems = items.mapIndexed { index, diary ->
