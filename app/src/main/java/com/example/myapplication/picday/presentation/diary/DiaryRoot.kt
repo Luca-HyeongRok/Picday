@@ -25,7 +25,8 @@ fun DiaryRoot(
     onEditClick: (String) -> Unit = {},
     onBack: () -> Unit = {},
     onSaveComplete: () -> Unit = {},
-    editDiaryId: String? = null
+    editDiaryId: String? = null,
+    onDelete: (String) -> Unit = {}
 ) {
     val diaryViewModel: DiaryViewModel = hiltViewModel()
     val writeViewModel: WriteViewModel = hiltViewModel()
@@ -78,7 +79,8 @@ fun DiaryRoot(
                 onTitleChange = { title -> writeViewModel.onTitleChanged(title) },
                 onContentChange = { content -> writeViewModel.onContentChanged(content) },
                 onPhotosAdded = { uris -> writeViewModel.onPhotosAdded(uris) },
-                onPhotoRemoved = { photoId -> writeViewModel.onPhotoRemoved(photoId) }
+                onPhotoRemoved = { photoId -> writeViewModel.onPhotoRemoved(photoId) },
+                onDelete = onDelete
             )
         }
     }

@@ -133,7 +133,11 @@ fun MainNavHost(
                 selectedDate = date,
                 writeMode = mode,
                 onBack = { navController.popBackStack() },
-                onSaveComplete = { navController.popBackStack() }
+                onSaveComplete = { navController.popBackStack() },
+                onDelete = {
+                    writeViewModel.onDelete(it)
+                    navController.popBackStack()
+                }
             )
         }
     }

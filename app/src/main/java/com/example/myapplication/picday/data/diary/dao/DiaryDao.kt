@@ -18,6 +18,7 @@ interface DiaryDao {
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insert(entity: DiaryEntity)
 
+
     @Update
     suspend fun update(entity: DiaryEntity)
 
@@ -26,4 +27,7 @@ interface DiaryDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM diary WHERE dateEpochDay = :dateEpochDay)")
     suspend fun existsByDate(dateEpochDay: Long): Boolean
+
+    @Query("DELETE FROM diary WHERE id = :id")
+    suspend fun deleteById(id: String): Int
 }

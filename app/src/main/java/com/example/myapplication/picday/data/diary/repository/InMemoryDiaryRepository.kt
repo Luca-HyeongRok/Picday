@@ -97,6 +97,27 @@ class InMemoryDiaryRepository(
         photosByDiaryId[diaryId] = photos.toMutableList()
     }
 
+    override fun deleteDiary(diaryId: String) {
+        val iterator = diaryByDate.entries.iterator()
+
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val diaries = entry.value
+
+            val removed = diaries.removeIf { it.id == diaryId }
+            if (removed) {
+                if (diaries.isEmpty()) {
+                    iterator.remove()
+                }
+                break
+            }
+        }
+
+        // 관련 사진 데이터도 제거
+        photosByDiaryId.remove(diaryId)
+    }
+
+
     private fun addDiaryInternal(diary: Diary) {
         val day = diaryByDate.getOrPut(diary.date) { mutableListOf() }
         day.add(diary)
