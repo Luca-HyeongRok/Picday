@@ -1,10 +1,8 @@
 package com.example.myapplication.picday.presentation.write.content
 
-import android.graphics.BitmapFactory
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,13 +20,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.myapplication.picday.BuildConfig
 import com.example.myapplication.picday.R
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun ColumnScope.WriteEditContent(
@@ -184,23 +183,7 @@ internal fun WriteCoverPhoto(coverPhotoUri: String?) {
 }
 
 @Composable
-private fun PhotoThumbnail(
-    uri: String,
-    onRemove: () -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var bitmap by remember(uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
-
-    LaunchedEffect(uri) {
-        bitmap = withContext(Dispatchers.IO) {
-            runCatching {
-                context.contentResolver.openInputStream(android.net.Uri.parse(uri))?.use { stream ->
-                    BitmapFactory.decodeStream(stream)
-                }
-            }.getOrNull()
-        }
-    }
-
+private fun PhotoThumbnail(uri: String, onRemove: () -> Unit) {
     Box(
         modifier = Modifier
             .size(88.dp)
@@ -208,14 +191,15 @@ private fun PhotoThumbnail(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         contentAlignment = Alignment.TopEnd
     ) {
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap!!.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(uri)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
         IconButton(
             onClick = onRemove,
@@ -243,20 +227,6 @@ private fun PhotoThumbnail(
 
 @Composable
 private fun CoverPhoto(uri: String) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var bitmap by remember(uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
-
-    LaunchedEffect(uri) {
-        bitmap = withContext(Dispatchers.IO) {
-            runCatching {
-                context.contentResolver.openInputStream(android.net.Uri.parse(uri))
-                    ?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
-            }.getOrNull()
-        }
-    }
-
     Box(
         modifier = Modifier
             .size(220.dp)
@@ -264,13 +234,14 @@ private fun CoverPhoto(uri: String) {
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap!!.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(uri)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
     }
 }

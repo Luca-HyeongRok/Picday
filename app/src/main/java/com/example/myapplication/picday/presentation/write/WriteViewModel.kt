@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.viewModelScope
 import java.time.LocalDate
 
 @HiltViewModel
@@ -34,22 +37,24 @@ class WriteViewModel @Inject constructor(
     }
 
     fun onEditClicked(diaryId: String) {
-        val diary = repository.getDiaryById(diaryId) ?: return
-        val photos = repository.getPhotos(diaryId)
-        _uiState.update {
-            it.copy(
-                uiMode = WriteUiMode.EDIT,
-                editingDiaryId = diaryId,
-                title = diary.title.orEmpty(),
-                content = diary.content,
-                photoItems = photos.map { photo ->
-                    WritePhotoItem(
-                        id = photo.id,
-                        uri = photo.uri,
-                        state = WritePhotoState.KEEP
-                    )
-                }
-            )
+        viewModelScope.launch(Dispatchers.IO) {
+            val diary = repository.getDiaryById(diaryId) ?: return@launch
+            val photos = repository.getPhotos(diaryId)
+            _uiState.update {
+                it.copy(
+                    uiMode = WriteUiMode.EDIT,
+                    editingDiaryId = diaryId,
+                    title = diary.title.orEmpty(),
+                    content = diary.content,
+                    photoItems = photos.map { photo ->
+                        WritePhotoItem(
+                            id = photo.id,
+                            uri = photo.uri,
+                            state = WritePhotoState.KEEP
+                        )
+                    }
+                )
+            }
         }
     }
 
@@ -89,24 +94,28 @@ class WriteViewModel @Inject constructor(
             .filter { it.state != WritePhotoState.DELETE }
             .map { it.uri }
 
-        when (state.uiMode) {
-            WriteUiMode.ADD -> {
-                repository.addDiaryForDate(date, normalizedTitle, state.content, retainedUris)
-                resetForView()
+        viewModelScope.launch(Dispatchers.IO) {
+            when (state.uiMode) {
+                WriteUiMode.ADD -> {
+                    repository.addDiaryForDate(date, normalizedTitle, state.content, retainedUris)
+                    resetForView()
+                }
+                WriteUiMode.EDIT -> {
+                    val targetId = state.editingDiaryId ?: return@launch
+                    repository.updateDiary(targetId, normalizedTitle, state.content)
+                    repository.replacePhotos(targetId, retainedUris)
+                    resetForView()
+                }
+                WriteUiMode.VIEW -> Unit
             }
-            WriteUiMode.EDIT -> {
-                val targetId = state.editingDiaryId ?: return
-                repository.updateDiary(targetId, normalizedTitle, state.content)
-                repository.replacePhotos(targetId, retainedUris)
-                resetForView()
-            }
-            WriteUiMode.VIEW -> Unit
         }
     }
 
     fun onDelete(diaryId: String) {
-        repository.deleteDiary(diaryId)
-        resetForView()
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteDiary(diaryId)
+            resetForView()
+        }
     }
 
     fun getCoverPhotoUri(): String? {

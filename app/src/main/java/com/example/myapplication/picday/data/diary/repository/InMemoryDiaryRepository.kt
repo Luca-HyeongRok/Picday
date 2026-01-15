@@ -20,6 +20,13 @@ class InMemoryDiaryRepository(
         return diaryByDate[date]?.toList() ?: emptyList()
     }
 
+    override fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
+        return diaryByDate.entries
+            .filter { (date, _) -> !date.isBefore(startDate) && !date.isAfter(endDate) }
+            .flatMap { it.value }
+            .toList()
+    }
+
     override fun getDiaryById(diaryId: String): Diary? {
         for (diaries in diaryByDate.values) {
             diaries.firstOrNull { it.id == diaryId }?.let { return it }

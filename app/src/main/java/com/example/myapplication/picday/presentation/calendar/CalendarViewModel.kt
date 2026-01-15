@@ -9,7 +9,18 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 
-class CalendarViewModel : ViewModel() {
+import androidx.lifecycle.viewModelScope
+import com.example.myapplication.picday.domain.repository.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class CalendarViewModel @Inject constructor(
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
     // 초기 상태는 ViewModel에서 명시적으로 생성
     private val _uiState = MutableStateFlow(
@@ -19,6 +30,13 @@ class CalendarViewModel : ViewModel() {
         )
     )
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
+
+    val backgroundUri: StateFlow<String?> = settingsRepository.calendarBackgroundUri
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     init {
         loadCalendarDays()
@@ -81,6 +99,12 @@ class CalendarViewModel : ViewModel() {
     fun onDateSelected(date: LocalDate) {
         _uiState.update {
             it.copy(selectedDate = date)
+        }
+    }
+
+    fun setBackgroundUri(uri: String?) {
+        viewModelScope.launch {
+            settingsRepository.setCalendarBackgroundUri(uri)
         }
     }
 }
