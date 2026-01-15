@@ -98,20 +98,25 @@ class InMemoryDiaryRepository(
     }
 
     override fun deleteDiary(diaryId: String) {
-        // 날짜별 다이어리 맵에서 해당 다이어리를 찾아 제거합니다.
-        for ((date, diaries) in diaryByDate) {
+        val iterator = diaryByDate.entries.iterator()
+
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val diaries = entry.value
+
             val removed = diaries.removeIf { it.id == diaryId }
             if (removed) {
-                // 해당 날짜에 더 이상 다이어리가 없으면 날짜 키 자체를 제거합니다.
                 if (diaries.isEmpty()) {
-                    diaryByDate.remove(date)
+                    iterator.remove()
                 }
                 break
             }
         }
-        // 연관된 사진 데이터도 메모리에서 제거합니다.
+
+        // 관련 사진 데이터도 제거
         photosByDiaryId.remove(diaryId)
     }
+
 
     private fun addDiaryInternal(diary: Diary) {
         val day = diaryByDate.getOrPut(diary.date) { mutableListOf() }
