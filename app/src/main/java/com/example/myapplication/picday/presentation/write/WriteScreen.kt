@@ -15,6 +15,13 @@ import com.example.myapplication.picday.presentation.write.content.WriteContent
 import com.example.myapplication.picday.presentation.write.state.WriteState
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 import java.time.LocalDate
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,9 +37,39 @@ fun WriteScreen(
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onPhotosAdded: (List<String>) -> Unit,
-    onPhotoRemoved: (String) -> Unit
+    onPhotoRemoved: (String) -> Unit,
+    onDelete: (String) -> Unit
 ) {
     val isEditMode = writeState.uiMode != WriteUiMode.VIEW
+    // 삭제 확인 다이얼로그 표시 여부를 관리하는 상태
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("기록 삭제") },
+            text = { Text("정말 이 기록을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val diaryId = writeState.editingDiaryId
+                        if (diaryId != null) {
+                            onDelete(diaryId)
+                        }
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -40,7 +77,8 @@ fun WriteScreen(
                 date = selectedDate,
                 onBack = onBack,
                 onSave = onSave,
-                canSave = isEditMode && writeState.content.isNotBlank()
+                canSave = isEditMode && writeState.content.isNotBlank(),
+                onDelete = if (isEditMode) { { showDeleteDialog = true } } else null
             )
         }
     ) { padding ->

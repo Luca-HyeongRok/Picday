@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import java.time.LocalDate
@@ -18,7 +19,8 @@ fun WriteTopBar(
     date: LocalDate,
     onBack: () -> Unit,
     onSave: () -> Unit,
-    canSave: Boolean
+    canSave: Boolean,
+    onDelete: (() -> Unit)? = null
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -36,6 +38,14 @@ fun WriteTopBar(
             }
         },
         actions = {
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "삭제"
+                    )
+                }
+            }
             TextButton(
                 onClick = onSave,
                 enabled = canSave

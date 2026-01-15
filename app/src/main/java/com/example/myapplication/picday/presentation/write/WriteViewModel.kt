@@ -104,6 +104,11 @@ class WriteViewModel @Inject constructor(
         }
     }
 
+    fun onDelete(diaryId: String) {
+        repository.deleteDiary(diaryId)
+        resetForView()
+    }
+
     fun getCoverPhotoUri(): String? {
         return _uiState.value.photoItems.firstOrNull { item ->
             item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW

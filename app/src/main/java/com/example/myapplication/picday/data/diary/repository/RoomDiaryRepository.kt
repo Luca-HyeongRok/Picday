@@ -95,4 +95,14 @@ class RoomDiaryRepository(
             }
         }
     }
+
+    override fun deleteDiary(diaryId: String) {
+        runBlocking(Dispatchers.IO) {
+            // 트랜잭션을 사용하여 다이어리와 연관된 사진 데이터를 원자적으로 삭제합니다.
+            database.withTransaction {
+                diaryPhotoDao.deleteByDiaryId(diaryId) // 연관된 사진 먼저 삭제
+                diaryDao.deleteById(diaryId)           // 다이어리 본문 삭제
+            }
+        }
+    }
 }
