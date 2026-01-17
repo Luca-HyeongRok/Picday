@@ -13,6 +13,8 @@ data class CalendarUiState(
 data class CalendarDay(
     val date: LocalDate,
     val isCurrentMonth: Boolean,
-    val isToday: Boolean = false
+    val isToday: Boolean = false,
+    val isHoliday: Boolean = false,
+    val holidayName: String? = null
 )
 

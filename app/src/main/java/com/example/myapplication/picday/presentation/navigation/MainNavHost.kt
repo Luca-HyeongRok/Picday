@@ -2,7 +2,6 @@ package com.example.myapplication.picday.presentation.navigation
 
 import android.net.Uri
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,7 +29,7 @@ fun MainNavHost(
     NavHost(
         navController = navController,
         startDestination = Screen.Calendar.route,
-        modifier = Modifier.padding(innerPadding)
+        modifier = Modifier // padding(innerPadding) 제거하여 풀스크린 구현
     ) {
 
         /* --------------------------------

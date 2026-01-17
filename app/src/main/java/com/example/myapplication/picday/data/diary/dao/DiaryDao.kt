@@ -12,6 +12,9 @@ interface DiaryDao {
     @Query("SELECT * FROM diary WHERE dateEpochDay = :dateEpochDay ORDER BY createdAt ASC")
     suspend fun getByDate(dateEpochDay: Long): List<DiaryEntity>
 
+    @Query("SELECT * FROM diary WHERE dateEpochDay >= :start AND dateEpochDay <= :end ORDER BY dateEpochDay ASC, createdAt ASC")
+    suspend fun getByDateRange(start: Long, end: Long): List<DiaryEntity>
+
     @Query("SELECT * FROM diary WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): DiaryEntity?
 
