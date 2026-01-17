@@ -3,18 +3,9 @@ package com.example.myapplication.picday.presentation.diary
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +38,7 @@ fun DiaryScreen(
 
         LazyColumn(
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(bottom = 120.dp),
             modifier = Modifier.weight(1f)
         ) {
             items(uiState.uiItems) { item ->
@@ -69,20 +60,5 @@ fun DiaryScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
-        ) {
-            FloatingActionButton(
-                onClick = { onWriteClick(uiState.selectedDate, WriteMode.ADD) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "기록 추가")
-            }
-        }
     }
 }
