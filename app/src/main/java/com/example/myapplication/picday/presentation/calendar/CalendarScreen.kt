@@ -59,9 +59,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.myapplication.picday.R
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
 import kotlinx.coroutines.delay
@@ -143,7 +144,7 @@ fun CalendarScreen(
                     }
 
                     Text(
-                        text = "${uiState.currentYearMonth.year} ${uiState.currentYearMonth.month.name}",
+                        text = "${uiState.currentYearMonth.year} ${uiState.currentYearMonth.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface,
