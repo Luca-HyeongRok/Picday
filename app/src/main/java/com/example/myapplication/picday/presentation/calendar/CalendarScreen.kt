@@ -1,10 +1,27 @@
 package com.example.myapplication.picday.presentation.calendar
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -14,12 +31,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -27,14 +59,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.R
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.example.myapplication.picday.R
+import com.example.myapplication.picday.presentation.diary.DiaryViewModel
+import kotlinx.coroutines.delay
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +107,8 @@ fun CalendarScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .animateContentSize(), // 크기 변화 시 부드러운 애니메이션
             shape = RoundedCornerShape(32.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
             tonalElevation = 4.dp
@@ -103,10 +134,10 @@ fun CalendarScreen(
 
                     Text(
                         text = "${uiState.currentYearMonth.year} ${uiState.currentYearMonth.month.name}",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        letterSpacing = 2.sp
+                        letterSpacing = 1.sp
                     )
 
                     IconButton(onClick = viewModel::onNextMonthClick) {
@@ -129,10 +160,10 @@ fun CalendarScreen(
                             Text(
                                 text = it,
                                 modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontWeight = FontWeight.SemiBold
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -141,14 +172,14 @@ fun CalendarScreen(
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(7),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         userScrollEnabled = false,
-                        modifier = Modifier.height(280.dp)
+                        modifier = Modifier.wrapContentHeight()
                     ) {
                         items(
                             items = uiState.calendarDays,
-                            key = { it.date.toString() } // 고유 키 추가로 성능 향상
+                            key = { it.date.toString() }
                         ) { day ->
                             val coverUri = remember(coverPhotoByDate, day.date) { 
                                 coverPhotoByDate[day.date] 
@@ -322,7 +353,7 @@ fun DayCell(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            kotlinx.coroutines.delay(150)
+            delay(150)
             isPressed = false
         }
     }
@@ -336,12 +367,14 @@ fun DayCell(
                 onClick = {
                     isPressed = true
                     onClick(day.date)
-                }
+                },
+                indication = null,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             ),
         contentAlignment = Alignment.Center
     ) {
         if (day.isCurrentMonth) {
-            // 오늘 날짜 기초 배경 (사진 없을 때만 살짝)
+            // 오늘 날짜 기초 배경
             if (day.isToday && coverPhotoUri == null) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -355,7 +388,7 @@ fun DayCell(
                 DayCoverPhoto(uri = coverPhotoUri)
             }
 
-            // 오늘 날짜 테두리 (진한 회색으로 사진을 감싸도록 나중에 배치)
+            // 오늘 날짜 테두리
             if (day.isToday) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -365,27 +398,45 @@ fun DayCell(
                 ) {}
             }
 
-            // 클릭 피드백 (일시적)
+            // 클릭 피드백
             if (isPressed) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.1f),
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    color = Color.Black.copy(alpha = 0.1f)
                 ) {}
             }
 
-            // 날짜 숫자
+            // 날짜 숫자 (항상 정중앙 유지)
             Text(
                 text = day.date.dayOfMonth.toString(),
-                style = if (day.isToday) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+                fontSize = if (day.isToday) 17.sp else 16.sp,
                 color = when {
                     coverPhotoUri != null -> Color.White
-                    day.isToday -> Color.Black // 진한 검은색
+                    day.isToday -> Color.Black
+                    day.isHoliday -> Color(0xFFE53935)
                     else -> MaterialTheme.colorScheme.onSurface
                 },
-                fontWeight = if (day.isToday) FontWeight.ExtraBold else FontWeight.Normal
+                fontWeight = if (day.isToday) FontWeight.Black else FontWeight.SemiBold,
+                modifier = Modifier.align(Alignment.Center)
             )
+            
+            // 공휴일 이름 (중앙 기준 12dp 오프셋으로 수동 조정)
+            if (day.holidayName != null) {
+                Text(
+                    text = day.holidayName,
+                    fontSize = 6.sp, // 긴 글자(대체공휴일 등) 잘림 방지를 위해 축소
+                    color = Color(0xFFE53935),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    letterSpacing = (-0.2).sp, // 자간을 미세하게 좁혀 가독성 확보
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(y = 12.dp)
+                        .padding(horizontal = 2.dp)
+                )
+            }
         }
     }
 }
