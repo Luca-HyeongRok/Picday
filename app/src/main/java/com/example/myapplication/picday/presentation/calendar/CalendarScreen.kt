@@ -78,10 +78,20 @@ fun CalendarScreen(
     val backgroundUri by viewModel.backgroundUri.collectAsState()
     val coverPhotoByDate by diaryViewModel.coverPhotoByDate.collectAsState()
 
+    val context = LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
+            // 앱 재시작시에도 접근 권한을 유지하기 위해 지속 가능한 권한 요청
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                // 권한 획득 실패 시 로그 출력 등 추가 처리가 가능하지만, 우선 그대로 진행
+            }
             viewModel.setBackgroundUri(uri.toString())
         }
     }

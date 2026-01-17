@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import java.time.LocalDate
 
 @HiltViewModel
@@ -70,8 +71,11 @@ class DiaryViewModel @Inject constructor(
         }
     }
 
+    private var updateJob: Job? = null
+
     private fun updateUiForDate(date: LocalDate) {
-        viewModelScope.launch(Dispatchers.IO) {
+        updateJob?.cancel()
+        updateJob = viewModelScope.launch(Dispatchers.IO) {
             val items = repository.getByDate(date)
                 .sortedBy { it.createdAt }
             var coverForDate: String? = null
