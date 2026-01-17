@@ -68,14 +68,31 @@ class WriteViewModel @Inject constructor(
 
     fun onPhotosAdded(uris: List<String>) {
         if (uris.isEmpty()) return
-        val newItems = uris.map { uri ->
-            WritePhotoItem(
-                id = System.nanoTime().toString(),
-                uri = uri,
-                state = WritePhotoState.NEW
-            )
+        
+        _uiState.update { state ->
+            // 현재 활성화된(삭제되지 않은) 사진들의 URI 집합
+            val existingUris = state.photoItems
+                .filter { it.state != WritePhotoState.DELETE }
+                .map { it.uri }
+                .toSet()
+
+            // 중복되지 않은 신규 URI만 필터링 (입력 리스트 자체 내 중복도 제거)
+            val newUniqueItems = uris.distinct()
+                .filter { it !in existingUris }
+                .map { uri ->
+                    WritePhotoItem(
+                        id = System.nanoTime().toString(),
+                        uri = uri,
+                        state = WritePhotoState.NEW
+                    )
+                }
+
+            if (newUniqueItems.isEmpty()) {
+                state
+            } else {
+                state.copy(photoItems = state.photoItems + newUniqueItems)
+            }
         }
-        _uiState.update { it.copy(photoItems = it.photoItems + newItems) }
     }
 
     fun onPhotoRemoved(photoId: String) {

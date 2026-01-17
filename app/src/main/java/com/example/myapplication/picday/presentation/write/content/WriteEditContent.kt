@@ -40,13 +40,16 @@ fun ColumnScope.WriteEditContent(
     onPhotosAdded: (List<String>) -> Unit,
     onPhotoRemoved: (String) -> Unit
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    fun onImagesPicked(uris: List<android.net.Uri>) {
+        if (uris.isEmpty()) return
+        onPhotosAdded(uris.map { it.toString() })
+    }
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia()
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10)
     ) { uris ->
-        if (uris.isNotEmpty()) {
-            onPhotosAdded(uris.map { it.toString() })
-        }
+        onImagesPicked(uris)
     }
 
     Spacer(modifier = Modifier.height(24.dp))
