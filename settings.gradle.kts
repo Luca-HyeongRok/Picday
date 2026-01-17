@@ -1,7 +1,7 @@
 pluginManagement {
     plugins {
         // Hilt 플러그인 버전을 중앙에서 관리한다.
-        id("com.google.dagger.hilt.android") version "2.51.1"
+        id("com.google.dagger.hilt.android") version "2.57.2"
     }
     repositories {
         google {
