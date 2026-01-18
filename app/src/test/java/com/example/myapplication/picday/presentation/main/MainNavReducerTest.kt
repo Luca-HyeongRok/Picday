@@ -55,4 +55,81 @@ class MainNavReducerTest {
         // Then
         assertEquals(listOf(MainDestination.Calendar), next)
     }
+
+    @Test
+    fun `DiaryEditClick 시 Write VIEW로 진입한다`() {
+        // Given
+        val date = LocalDate.of(2025, 2, 1)
+        val editDiaryId = "edit-123"
+        val backStack = listOf<MainDestination>(MainDestination.Diary)
+
+        // When
+        val next = reduceMainNav(
+            backStack,
+            MainNavEvent.DiaryEditClick(date, editDiaryId)
+        )
+
+        // Then
+        assertEquals(
+            listOf(
+                MainDestination.Diary,
+                MainDestination.Write(date.toString(), WriteMode.VIEW.name, editDiaryId)
+            ),
+            next
+        )
+    }
+
+    @Test
+    fun `WriteSaveComplete 시 pop 된다`() {
+        // Given
+        val backStack = listOf<MainDestination>(
+            MainDestination.Calendar,
+            MainDestination.Write("2025-01-01", WriteMode.ADD.name, null)
+        )
+
+        // When
+        val next = reduceMainNav(backStack, MainNavEvent.WriteSaveComplete)
+
+        // Then
+        assertEquals(listOf(MainDestination.Calendar), next)
+    }
+
+    @Test
+    fun `WriteDeleteComplete 시 pop 된다`() {
+        // Given
+        val backStack = listOf<MainDestination>(
+            MainDestination.Calendar,
+            MainDestination.Write("2025-01-01", WriteMode.ADD.name, null)
+        )
+
+        // When
+        val next = reduceMainNav(backStack, MainNavEvent.WriteDeleteComplete)
+
+        // Then
+        assertEquals(listOf(MainDestination.Calendar), next)
+    }
+
+    @Test
+    fun `root 상태에서 Back 이벤트는 유지된다`() {
+        // Given
+        val backStack = listOf<MainDestination>(MainDestination.Calendar)
+
+        // When
+        val next = reduceMainNav(backStack, MainNavEvent.WriteBack)
+
+        // Then
+        assertEquals(listOf(MainDestination.Calendar), next)
+    }
+
+    @Test
+    fun `동일 bottom tab 클릭 시 변화가 없다`() {
+        // Given
+        val backStack = listOf<MainDestination>(MainDestination.Calendar)
+
+        // When
+        val next = reduceMainNav(backStack, MainNavEvent.BottomTabClick(MainDestination.Calendar))
+
+        // Then
+        assertEquals(listOf(MainDestination.Calendar), next)
+    }
 }
