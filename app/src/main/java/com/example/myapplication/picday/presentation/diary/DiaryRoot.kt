@@ -110,7 +110,8 @@ fun DiaryRoot(
                 onPhotosAdded = { uris -> writeViewModel.onPhotosAdded(uris) },
                 onPhotoRemoved = { photoId -> writeViewModel.onPhotoRemoved(photoId) },
                 onDelete = onDelete,
-                onPageSelected = { index -> currentPhotoIndex = index }
+                onPageSelected = { index -> currentPhotoIndex = index },
+                onPhotoClick = { photoId -> writeViewModel.onPhotoClicked(photoId) }
             )
         }
     }

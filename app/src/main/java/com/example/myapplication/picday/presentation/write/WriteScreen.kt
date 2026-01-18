@@ -40,7 +40,8 @@ fun WriteScreen(
     onPhotosAdded: (List<String>) -> Unit,
     onPhotoRemoved: (String) -> Unit,
     onDelete: (String) -> Unit,
-    onPageSelected: (Int) -> Unit = {}
+    onPageSelected: (Int) -> Unit = {},
+    onPhotoClick: (String) -> Unit = {}
 ) {
     val isEditMode = writeState.uiMode != WriteUiMode.VIEW
     val isEditingExistingDiary = writeState.editingDiaryId != null
@@ -114,7 +115,8 @@ fun WriteScreen(
                 onContentChange = onContentChange,
                 onPhotosAdded = onPhotosAdded,
                 onPhotoRemoved = onPhotoRemoved,
-                onPageSelected = onPageSelected
+                onPageSelected = onPageSelected,
+                onPhotoClick = onPhotoClick
             )
         }
     }

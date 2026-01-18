@@ -90,7 +90,23 @@ class WriteViewModel @Inject constructor(
             if (newUniqueItems.isEmpty()) {
                 state
             } else {
-                state.copy(photoItems = state.photoItems + newUniqueItems)
+                // 새로 추가한 사진들이 앞에 오도록 하여 자동으로 대표 사진(첫 번째)으로 지정
+                state.copy(photoItems = newUniqueItems + state.photoItems)
+            }
+        }
+    }
+
+    fun onPhotoClicked(photoId: String) {
+        _uiState.update { state ->
+            val items = state.photoItems.toMutableList()
+            val index = items.indexOfFirst { it.id == photoId }
+            if (index > 0) {
+                // 선택한 사진을 리스트의 맨 앞으로 이동시켜 대표 사진으로 설정
+                val item = items.removeAt(index)
+                items.add(0, item)
+                state.copy(photoItems = items)
+            } else {
+                state
             }
         }
     }
