@@ -7,5 +7,6 @@ data class DiaryUiItem(
     val date: LocalDate,
     val title: String?,
     val previewContent: String,
-    val coverPhotoUri: String?
+    val coverPhotoUri: String?,
+    val photoUris: List<String> = emptyList()
 )

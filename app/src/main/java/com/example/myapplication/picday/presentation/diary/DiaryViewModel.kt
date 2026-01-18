@@ -82,6 +82,7 @@ class DiaryViewModel @Inject constructor(
             val lastIndex = items.lastIndex
             val uiItems = items.mapIndexed { index, diary ->
                 val photos = repository.getPhotos(diary.id)
+                val photoUris = photos.map { it.uri }
                 val coverPhotoUri = deriveCoverPhotoUri(photos)
                 if (index == lastIndex) {
                     coverForDate = coverPhotoUri
@@ -91,7 +92,8 @@ class DiaryViewModel @Inject constructor(
                     date = diary.date,
                     title = diary.title,
                     previewContent = diary.previewContent,
-                    coverPhotoUri = coverPhotoUri
+                    coverPhotoUri = coverPhotoUri,
+                    photoUris = photoUris
                 )
             }
             _uiState.update {

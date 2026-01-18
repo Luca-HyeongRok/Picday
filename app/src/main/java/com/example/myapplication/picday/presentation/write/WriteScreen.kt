@@ -30,6 +30,7 @@ fun WriteScreen(
     items: List<DiaryUiItem>,
     writeState: WriteState,
     coverPhotoUri: String?,
+    viewModePhotoUris: List<String> = emptyList(),
     onBack: () -> Unit,
     onSave: () -> Unit,
     onAddClick: () -> Unit,
@@ -101,6 +102,7 @@ fun WriteScreen(
             WriteContent(
                 uiMode = writeState.uiMode,
                 coverPhotoUri = coverPhotoUri,
+                viewModePhotoUris = viewModePhotoUris,
                 items = items,
                 title = writeState.title,
                 content = writeState.content,
