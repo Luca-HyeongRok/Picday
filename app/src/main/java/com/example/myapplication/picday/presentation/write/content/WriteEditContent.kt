@@ -4,6 +4,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -38,7 +39,8 @@ fun ColumnScope.WriteEditContent(
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onPhotosAdded: (List<String>) -> Unit,
-    onPhotoRemoved: (String) -> Unit
+    onPhotoRemoved: (String) -> Unit,
+    onPhotoClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     fun onImagesPicked(uris: List<android.net.Uri>) {
@@ -121,7 +123,8 @@ fun ColumnScope.WriteEditContent(
             items(visiblePhotoItems, key = { it.id }) { item ->
                 PhotoThumbnail(
                     uri = item.uri,
-                    onRemove = { onPhotoRemoved(item.id) }
+                    onRemove = { onPhotoRemoved(item.id) },
+                    onClick = { onPhotoClick(item.id) }
                 )
             }
         }
@@ -186,12 +189,17 @@ internal fun WriteCoverPhoto(coverPhotoUri: String?) {
 }
 
 @Composable
-private fun PhotoThumbnail(uri: String, onRemove: () -> Unit) {
+private fun PhotoThumbnail(
+    uri: String,
+    onRemove: () -> Unit,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .size(88.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .clickable { onClick() },
         contentAlignment = Alignment.TopEnd
     ) {
         AsyncImage(
