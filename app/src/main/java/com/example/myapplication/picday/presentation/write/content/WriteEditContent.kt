@@ -23,6 +23,7 @@ import java.util.*
 import android.provider.Settings
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.activity.ComponentActivity
@@ -70,19 +71,23 @@ fun ColumnScope.WriteEditContent(
     }
 
     // --- Camera Logic Start ---
-    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var tempPhotoUriString by rememberSaveable { mutableStateOf<String?>(null) }
+    val tempPhotoUri = tempPhotoUriString?.let { Uri.parse(it) }
+    
     var showRationaleDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    fun createTempPictureUri(): Uri {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = context.getExternalFilesDir("Pictures")
-        val file = File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+    fun createTempPictureUri(): Uri? {
+        return runCatching {
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val storageDir = context.getExternalFilesDir("Pictures") ?: context.cacheDir
+            val file = File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+        }.getOrNull()
     }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
@@ -99,9 +104,10 @@ fun ColumnScope.WriteEditContent(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            val uri = createTempPictureUri()
-            tempPhotoUri = uri
-            takePictureLauncher.launch(uri)
+            createTempPictureUri()?.let { uri ->
+                tempPhotoUriString = uri.toString()
+                takePictureLauncher.launch(uri)
+            }
         } else {
             // 거부됨 - rationale은 이미 체크했으므로 여기서는 장기 거부 가능성 있음
             val activity = context as? ComponentActivity
@@ -114,9 +120,10 @@ fun ColumnScope.WriteEditContent(
     fun handleCameraClick() {
         when {
             ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
-                val uri = createTempPictureUri()
-                tempPhotoUri = uri
-                takePictureLauncher.launch(uri)
+                createTempPictureUri()?.let { uri ->
+                    tempPhotoUriString = uri.toString()
+                    takePictureLauncher.launch(uri)
+                }
             }
             context is ComponentActivity && ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.CAMERA) -> {
                 showRationaleDialog = true
