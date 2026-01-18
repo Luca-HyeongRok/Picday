@@ -50,24 +50,46 @@ fun MainScreen() {
     val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
 
-    fun navigateToTopLevel(target: MainDestination) {
+    fun popToRoot() {
         while (backStack.size > 1) {
             backStack.removeAt(backStack.lastIndex)
         }
+    }
+
+    fun popOne() {
+        if (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    }
+
+    fun switchBottomTab(target: MainDestination) {
+        popToRoot()
         if (backStack.last() != target) {
             backStack.add(target)
         }
     }
 
-    fun navigateToWrite(date: LocalDate, mode: WriteMode, editDiaryId: String? = null) {
-        backStack.add(
-            MainDestination.Write(
-                date = date.toString(),
-                mode = mode.name,
-                editDiaryId = editDiaryId
-            )
+    fun buildWriteDestination(
+        date: LocalDate,
+        mode: WriteMode,
+        editDiaryId: String? = null
+    ): MainDestination.Write {
+        return MainDestination.Write(
+            date = date.toString(),
+            mode = mode.name,
+            editDiaryId = editDiaryId
         )
     }
+
+    fun navigateToWrite(date: LocalDate, mode: WriteMode, editDiaryId: String? = null) {
+        backStack.add(buildWriteDestination(date, mode, editDiaryId))
+    }
+
+    fun navigateToCalendar() = switchBottomTab(MainDestination.Calendar)
+    fun navigateToDiary() = switchBottomTab(MainDestination.Diary)
+    fun navigateToWriteAdd(date: LocalDate) = navigateToWrite(date, WriteMode.ADD)
+    fun navigateToWriteEdit(date: LocalDate, editDiaryId: String) =
+        navigateToWrite(date, WriteMode.VIEW, editDiaryId)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -109,7 +131,7 @@ fun MainScreen() {
                                 screen = Screen.Calendar,
                                 isSelected = currentDestination is MainDestination.Calendar,
                                 onClick = {
-                                    navigateToTopLevel(MainDestination.Calendar)
+                                    navigateToCalendar()
                                 }
                             )
 
@@ -121,7 +143,7 @@ fun MainScreen() {
                                 screen = Screen.Diary,
                                 isSelected = currentDestination is MainDestination.Diary,
                                 onClick = {
-                                    navigateToTopLevel(MainDestination.Diary)
+                                    navigateToDiary()
                                 }
                             )
                         }
@@ -140,7 +162,7 @@ fun MainScreen() {
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                navigateToWrite(selectedDate, WriteMode.ADD)
+                                navigateToWriteAdd(selectedDate)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -161,11 +183,7 @@ fun MainScreen() {
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator()
             ),
-            onBack = {
-                if (backStack.size > 1) {
-                    backStack.removeAt(backStack.lastIndex)
-                }
-            },
+            onBack = { popOne() },
             entryProvider = entryProvider {
                 entry<MainDestination.Calendar> {
                     val diaryViewModel: DiaryViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
@@ -193,7 +211,7 @@ fun MainScreen() {
                             navigateToWrite(date, mode)
                         },
                         onEditClick = { diaryId ->
-                            navigateToWrite(selectedDate, WriteMode.VIEW, diaryId)
+                            navigateToWriteEdit(selectedDate, diaryId)
                         }
                     )
                 }
@@ -209,11 +227,11 @@ fun MainScreen() {
                         selectedDate = date,
                         writeMode = mode,
                         editDiaryId = destination.editDiaryId,
-                        onBack = { backStack.removeAt(backStack.lastIndex) },
-                        onSaveComplete = { backStack.removeAt(backStack.lastIndex) },
+                        onBack = { popOne() },
+                        onSaveComplete = { popOne() },
                         onDelete = {
                             writeViewModel.onDelete(it)
-                            backStack.removeAt(backStack.lastIndex)
+                            popOne()
                         }
                     )
                 }
