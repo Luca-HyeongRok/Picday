@@ -10,9 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,28 +25,78 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import com.example.myapplication.picday.presentation.common.SharedViewModel
-import com.example.myapplication.picday.presentation.navigation.MainNavHost
+import com.example.myapplication.picday.presentation.calendar.CalendarScreen
+import com.example.myapplication.picday.presentation.diary.DiaryRoot
+import com.example.myapplication.picday.presentation.diary.DiaryRootScreen
+import com.example.myapplication.picday.presentation.diary.DiaryViewModel
 import com.example.myapplication.picday.presentation.navigation.Screen
 import com.example.myapplication.picday.presentation.navigation.WriteMode
 import com.example.myapplication.picday.presentation.theme.AppColors
 import com.example.myapplication.picday.presentation.theme.AppShapes
+import java.time.LocalDate
+import kotlinx.serialization.Serializable
 
+@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
     val sharedViewModel: SharedViewModel = viewModel()
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-    val currentRoute = currentDestination?.route
     
-    val isWriteMode = currentRoute?.startsWith("write") == true
+    val backStack = rememberNavBackStack(MainDestination.Calendar)
+    val currentDestination = backStack.last()
+    val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
+
+    fun popToRoot() {
+        while (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    }
+
+    fun popOne() {
+        if (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    }
+
+    fun switchBottomTab(target: MainDestination) {
+        popToRoot()
+        if (backStack.last() != target) {
+            backStack.add(target)
+        }
+    }
+
+    fun createWriteDestination(
+        date: LocalDate,
+        mode: WriteMode,
+        editDiaryId: String? = null
+    ): MainDestination.Write {
+        return MainDestination.Write(
+            date = date.toString(),
+            mode = mode.name,
+            editDiaryId = editDiaryId
+        )
+    }
+
+    fun navigateToWrite(date: LocalDate, mode: WriteMode, editDiaryId: String? = null) {
+        backStack.add(createWriteDestination(date, mode, editDiaryId))
+    }
+
+    fun onBottomTabClick(target: MainDestination) = switchBottomTab(target)
+    fun onCalendarDateSelected(date: LocalDate, mode: WriteMode) = navigateToWrite(date, mode)
+    fun onDiaryWriteClick(date: LocalDate, mode: WriteMode) = navigateToWrite(date, mode)
+    fun onDiaryEditClick(date: LocalDate, editDiaryId: String) =
+        navigateToWrite(date, WriteMode.VIEW, editDiaryId)
+    fun onWriteAddClick(date: LocalDate) = navigateToWrite(date, WriteMode.ADD)
+    fun onWriteBack() = popOne()
+    fun onWriteSaveComplete() = popOne()
+    fun onWriteDelete() = popOne()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -83,15 +136,9 @@ fun MainScreen() {
                             // Left Tab: Calendar
                             BottomNavItem(
                                 screen = Screen.Calendar,
-                                isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Calendar.route } == true,
+                                isSelected = currentDestination is MainDestination.Calendar,
                                 onClick = {
-                                    navController.navigate(Screen.Calendar.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    onBottomTabClick(MainDestination.Calendar)
                                 }
                             )
 
@@ -101,15 +148,9 @@ fun MainScreen() {
                             // Right Tab: Diary
                             BottomNavItem(
                                 screen = Screen.Diary,
-                                isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Diary.route } == true,
+                                isSelected = currentDestination is MainDestination.Diary,
                                 onClick = {
-                                    navController.navigate(Screen.Diary.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    onBottomTabClick(MainDestination.Diary)
                                 }
                             )
                         }
@@ -128,9 +169,7 @@ fun MainScreen() {
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                navController.navigate(
-                                    Screen.Write.createRoute(selectedDate, WriteMode.ADD)
-                                )
+                                onWriteAddClick(selectedDate)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -145,12 +184,98 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        MainNavHost(
-            navController = navController,
-            sharedViewModel = sharedViewModel,
-            innerPadding = PaddingValues(0.dp)
+        NavDisplay(
+            backStack = backStack,
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator()
+            ),
+            onBack = { popOne() },
+            entryProvider = entryProvider {
+                entry<MainDestination.Calendar> {
+                    val diaryViewModel: DiaryViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+
+                    CalendarScreen(
+                        onDateSelected = { date ->
+                            sharedViewModel.updateSelectedDate(date)
+
+                            val mode = if (diaryViewModel.hasAnyRecord(date)) {
+                                WriteMode.VIEW
+                            } else {
+                                WriteMode.ADD
+                            }
+
+                            onCalendarDateSelected(date, mode)
+                        }
+                    )
+                }
+
+                entry<MainDestination.Diary> {
+                    DiaryRoot(
+                        screen = DiaryRootScreen.DIARY,
+                        selectedDate = selectedDate,
+                        onWriteClick = { date, mode ->
+                            onDiaryWriteClick(date, mode)
+                        },
+                        onEditClick = { diaryId ->
+                            onDiaryEditClick(selectedDate, diaryId)
+                        }
+                    )
+                }
+
+                entry<MainDestination.Write> { destination ->
+                    val date = runCatching { LocalDate.parse(destination.date) }
+                        .getOrElse { selectedDate }
+                    val mode = runCatching { WriteMode.valueOf(destination.mode) }
+                        .getOrElse { WriteMode.ADD }
+                    val writeViewModel: com.example.myapplication.picday.presentation.write.WriteViewModel =
+                        androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+                    val writeState by writeViewModel.uiState.collectAsState()
+                    var pendingDelete by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(pendingDelete, writeState.uiMode, writeState.editingDiaryId) {
+                        if (
+                            pendingDelete &&
+                            writeState.uiMode == com.example.myapplication.picday.presentation.write.state.WriteUiMode.VIEW &&
+                            writeState.editingDiaryId == null
+                        ) {
+                            pendingDelete = false
+                            onWriteDelete()
+                        }
+                    }
+
+                    DiaryRoot(
+                        screen = DiaryRootScreen.WRITE,
+                        selectedDate = date,
+                        writeMode = mode,
+                        editDiaryId = destination.editDiaryId,
+                        onBack = { onWriteBack() },
+                        onSaveComplete = { onWriteSaveComplete() },
+                        onDelete = {
+                            pendingDelete = true
+                            writeViewModel.onDelete(it)
+                        }
+                    )
+                }
+            }
         )
     }
+}
+
+@Serializable
+private sealed interface MainDestination : NavKey {
+    @Serializable
+    data object Calendar : MainDestination
+
+    @Serializable
+    data object Diary : MainDestination
+
+    @Serializable
+    data class Write(
+        val date: String,
+        val mode: String,
+        val editDiaryId: String? = null
+    ) : MainDestination
 }
 
 @Composable
