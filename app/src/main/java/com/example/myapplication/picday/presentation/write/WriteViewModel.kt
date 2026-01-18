@@ -81,7 +81,7 @@ class WriteViewModel @Inject constructor(
                 .filter { it !in existingUris }
                 .map { uri ->
                     WritePhotoItem(
-                        id = System.nanoTime().toString(),
+                        id = java.util.UUID.randomUUID().toString(),
                         uri = uri,
                         state = WritePhotoState.NEW
                     )
