@@ -90,51 +90,48 @@ class DiaryViewModel @Inject constructor(
     private fun updateUiForDate(date: LocalDate) {
         updateJob?.cancel()
         updateJob = viewModelScope.launch(Dispatchers.IO) {
-            val items = repository.getByDate(date)
+            val domainItems = repository.getByDate(date)
                 .sortedBy { it.createdAt }
-            
-            // 전수 사진 수집 (기록 생성 순 -> 사진 생성 순)
-            val allPhotos = items.flatMap { diary ->
-                repository.getPhotos(diary.id).map { it.uri }
-            }.distinct()
 
-            // 저장된 대표 사진 가져오기
-            val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
-            
-            // 정렬 및 대표 사진 처리
-            val sortedPhotos = if (savedCover != null && allPhotos.contains(savedCover)) {
-                // 대표 사진을 가장 앞으로
-                listOf(savedCover) + (allPhotos - savedCover)
-            } else {
-                allPhotos
-            }
+            val uiItems = fetchUiItems(domainItems)
+            val sortedPhotos = computeSortedPhotos(date, uiItems)
+            val coverForDate = sortedPhotos.firstOrNull()
 
-            var coverForDate: String? = sortedPhotos.firstOrNull()
-            
-            val uiItems = items.mapIndexed { index, diary ->
-                val photos = repository.getPhotos(diary.id)
-                val photoUris = photos.map { it.uri }
-                val coverPhotoUri = deriveCoverPhotoUri(photos)
-                
-                DiaryUiItem(
-                    id = diary.id,
-                    date = diary.date,
-                    title = diary.title,
-                    previewContent = diary.previewContent,
-                    coverPhotoUri = coverPhotoUri,
-                    photoUris = photoUris
-                )
-            }
             _uiState.update { current ->
                 current.copy(
                     selectedDate = date,
-                    items = items,
+                    items = domainItems,
                     uiItems = uiItems,
                     allPhotosForDate = sortedPhotos,
-                    initialPageIndex = 0, // 위에서 이미 front로 옮겼으므로 항상 0
+                    initialPageIndex = 0,
                     coverPhotoByDate = current.coverPhotoByDate + (date to coverForDate)
                 )
             }
+        }
+    }
+
+    private suspend fun fetchUiItems(items: List<com.example.myapplication.picday.domain.diary.Diary>): List<DiaryUiItem> {
+        return items.map { diary ->
+            val photos = repository.getPhotos(diary.id)
+            DiaryUiItem(
+                id = diary.id,
+                date = diary.date,
+                title = diary.title,
+                previewContent = diary.previewContent,
+                coverPhotoUri = deriveCoverPhotoUri(photos),
+                photoUris = photos.map { it.uri }
+            )
+        }
+    }
+
+    private suspend fun computeSortedPhotos(date: LocalDate, uiItems: List<DiaryUiItem>): List<String> {
+        val allPhotos = uiItems.flatMap { it.photoUris }.distinct()
+        val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
+
+        return if (savedCover != null && allPhotos.contains(savedCover)) {
+            listOf(savedCover) + (allPhotos - savedCover)
+        } else {
+            allPhotos
         }
     }
 
