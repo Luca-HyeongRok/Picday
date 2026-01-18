@@ -51,12 +51,38 @@ fun MainScreen() {
     val currentDestination = backStack.last()
     val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
+    var pendingEffects by remember { mutableStateOf<List<MainNavEffect>>(emptyList()) }
+    var pendingEditDiaryId by remember { mutableStateOf<String?>(null) }
 
     fun dispatchNav(event: MainNavEvent) {
         val current = backStack.asMainDestinations()
-        val next = reduceMainNav(current, event)
+        val result = reduceMainNav(current, event)
         backStack.clear()
-        backStack.addAll(next)
+        backStack.addAll(result.backStack)
+        pendingEffects = result.effects
+    }
+
+    LaunchedEffect(pendingEffects) {
+        if (pendingEffects.isEmpty()) return@LaunchedEffect
+
+        pendingEffects.forEach { effect ->
+            when (effect) {
+                MainNavEffect.PopOne -> {
+                    if (backStack.size > 1) {
+                        backStack.removeAt(backStack.lastIndex)
+                    }
+                }
+                MainNavEffect.PopToRoot -> {
+                    while (backStack.size > 1) {
+                        backStack.removeAt(backStack.lastIndex)
+                    }
+                }
+                is MainNavEffect.ConsumeEditDiary -> {
+                    pendingEditDiaryId = effect.diaryId
+                }
+            }
+        }
+        pendingEffects = emptyList()
     }
 
     Scaffold(
@@ -194,6 +220,12 @@ fun MainScreen() {
                     val writeState by writeViewModel.uiState.collectAsState()
                     var pendingDelete by remember { mutableStateOf(false) }
 
+                    LaunchedEffect(pendingEditDiaryId) {
+                        val diaryId = pendingEditDiaryId ?: return@LaunchedEffect
+                        writeViewModel.onEditClicked(diaryId)
+                        pendingEditDiaryId = null
+                    }
+
                     LaunchedEffect(pendingDelete, writeState.uiMode, writeState.editingDiaryId) {
                         if (
                             pendingDelete &&
@@ -209,7 +241,7 @@ fun MainScreen() {
                         screen = DiaryRootScreen.WRITE,
                         selectedDate = date,
                         writeMode = mode,
-                        editDiaryId = destination.editDiaryId,
+                        editDiaryId = null,
                         onBack = { dispatchNav(MainNavEvent.WriteBack) },
                         onSaveComplete = { dispatchNav(MainNavEvent.WriteSaveComplete) },
                         onDelete = {
