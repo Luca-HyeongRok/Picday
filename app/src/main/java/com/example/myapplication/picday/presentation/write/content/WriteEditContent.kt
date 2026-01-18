@@ -322,7 +322,7 @@ private fun PhotoThumbnail(uri: String, onRemove: () -> Unit, onClick: () -> Uni
         )
         IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
             Box(modifier = Modifier.size(18.dp).background(Color.Black.copy(alpha = 0.4f), CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
+                Icon(Icons.Default.Close, contentDescription = "사진 삭제", tint = Color.White, modifier = Modifier.size(10.dp))
             }
         }
     }
