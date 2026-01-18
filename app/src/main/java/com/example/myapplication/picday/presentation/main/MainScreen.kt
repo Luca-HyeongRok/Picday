@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -69,7 +70,7 @@ fun MainScreen() {
         }
     }
 
-    fun buildWriteDestination(
+    fun createWriteDestination(
         date: LocalDate,
         mode: WriteMode,
         editDiaryId: String? = null
@@ -82,14 +83,18 @@ fun MainScreen() {
     }
 
     fun navigateToWrite(date: LocalDate, mode: WriteMode, editDiaryId: String? = null) {
-        backStack.add(buildWriteDestination(date, mode, editDiaryId))
+        backStack.add(createWriteDestination(date, mode, editDiaryId))
     }
 
-    fun navigateToCalendar() = switchBottomTab(MainDestination.Calendar)
-    fun navigateToDiary() = switchBottomTab(MainDestination.Diary)
-    fun navigateToWriteAdd(date: LocalDate) = navigateToWrite(date, WriteMode.ADD)
-    fun navigateToWriteEdit(date: LocalDate, editDiaryId: String) =
+    fun onBottomTabClick(target: MainDestination) = switchBottomTab(target)
+    fun onCalendarDateSelected(date: LocalDate, mode: WriteMode) = navigateToWrite(date, mode)
+    fun onDiaryWriteClick(date: LocalDate, mode: WriteMode) = navigateToWrite(date, mode)
+    fun onDiaryEditClick(date: LocalDate, editDiaryId: String) =
         navigateToWrite(date, WriteMode.VIEW, editDiaryId)
+    fun onWriteAddClick(date: LocalDate) = navigateToWrite(date, WriteMode.ADD)
+    fun onWriteBack() = popOne()
+    fun onWriteSaveComplete() = popOne()
+    fun onWriteDelete() = popOne()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -131,7 +136,7 @@ fun MainScreen() {
                                 screen = Screen.Calendar,
                                 isSelected = currentDestination is MainDestination.Calendar,
                                 onClick = {
-                                    navigateToCalendar()
+                                    onBottomTabClick(MainDestination.Calendar)
                                 }
                             )
 
@@ -143,7 +148,7 @@ fun MainScreen() {
                                 screen = Screen.Diary,
                                 isSelected = currentDestination is MainDestination.Diary,
                                 onClick = {
-                                    navigateToDiary()
+                                    onBottomTabClick(MainDestination.Diary)
                                 }
                             )
                         }
@@ -162,7 +167,7 @@ fun MainScreen() {
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                navigateToWriteAdd(selectedDate)
+                                onWriteAddClick(selectedDate)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -198,7 +203,7 @@ fun MainScreen() {
                                 WriteMode.ADD
                             }
 
-                            navigateToWrite(date, mode)
+                            onCalendarDateSelected(date, mode)
                         }
                     )
                 }
@@ -208,10 +213,10 @@ fun MainScreen() {
                         screen = DiaryRootScreen.DIARY,
                         selectedDate = selectedDate,
                         onWriteClick = { date, mode ->
-                            navigateToWrite(date, mode)
+                            onDiaryWriteClick(date, mode)
                         },
                         onEditClick = { diaryId ->
-                            navigateToWriteEdit(selectedDate, diaryId)
+                            onDiaryEditClick(selectedDate, diaryId)
                         }
                     )
                 }
@@ -222,16 +227,23 @@ fun MainScreen() {
                     val writeViewModel: com.example.myapplication.picday.presentation.write.WriteViewModel =
                         androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 
+                    LaunchedEffect(destination.editDiaryId) {
+                        val editDiaryId = destination.editDiaryId
+                        if (editDiaryId != null) {
+                            writeViewModel.onEditClicked(editDiaryId)
+                        }
+                    }
+
                     DiaryRoot(
                         screen = DiaryRootScreen.WRITE,
                         selectedDate = date,
                         writeMode = mode,
-                        editDiaryId = destination.editDiaryId,
-                        onBack = { popOne() },
-                        onSaveComplete = { popOne() },
+                        editDiaryId = null,
+                        onBack = { onWriteBack() },
+                        onSaveComplete = { onWriteSaveComplete() },
                         onDelete = {
                             writeViewModel.onDelete(it)
-                            popOne()
+                            onWriteDelete()
                         }
                     )
                 }
