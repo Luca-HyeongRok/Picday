@@ -132,4 +132,77 @@ class MainNavReducerTest {
         // Then
         assertEquals(listOf(MainDestination.Calendar), next)
     }
+
+    @Test
+    fun `DiaryEditClick 발생 시 ConsumeEditDiary effect를 반환한다`() {
+        // Given
+        val date = LocalDate.of(2025, 3, 1)
+        val editDiaryId = "edit-123"
+        val backStack = listOf<MainDestination>(MainDestination.Diary)
+
+        // When
+        val result = reduceMainNav(
+            backStack,
+            MainNavEvent.DiaryEditClick(date, editDiaryId)
+        )
+
+        // Then
+        assertEquals(
+            listOf(
+                MainDestination.Diary,
+                MainDestination.Write(date.toString(), WriteMode.VIEW.name, editDiaryId)
+            ),
+            result.backStack
+        )
+        assertEquals(
+            listOf(MainNavEffect.ConsumeEditDiary(editDiaryId)),
+            result.effects
+        )
+    }
+
+    @Test
+    fun `WriteBack 이벤트는 PopOne effect를 반환한다`() {
+        // Given
+        val backStack = listOf<MainDestination>(
+            MainDestination.Calendar,
+            MainDestination.Write("2025-01-01", WriteMode.ADD.name, null)
+        )
+
+        // When
+        val result = reduceMainNav(backStack, MainNavEvent.WriteBack)
+
+        // Then
+        assertEquals(backStack, result.backStack)
+        assertEquals(listOf(MainNavEffect.PopOne), result.effects)
+    }
+
+    @Test
+    fun `WriteSaveComplete 이벤트는 PopOne effect를 반환한다`() {
+        // Given
+        val backStack = listOf<MainDestination>(
+            MainDestination.Diary,
+            MainDestination.Write("2025-01-02", WriteMode.ADD.name, null)
+        )
+
+        // When
+        val result = reduceMainNav(backStack, MainNavEvent.WriteSaveComplete)
+
+        // Then
+        assertEquals(listOf(MainNavEffect.PopOne), result.effects)
+    }
+
+    @Test
+    fun `BottomTabClick 동일 탭은 effect가 없다`() {
+        // Given
+        val backStack = listOf<MainDestination>(MainDestination.Calendar)
+
+        // When
+        val result = reduceMainNav(
+            backStack,
+            MainNavEvent.BottomTabClick(MainDestination.Calendar)
+        )
+
+        // Then
+        assertEquals(emptyList<MainNavEffect>(), result.effects)
+    }
 }
