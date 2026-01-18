@@ -17,22 +17,33 @@ sealed interface MainNavEvent {
 fun reduceMainNav(
     backStack: List<MainDestination>,
     event: MainNavEvent
-): List<MainDestination> {
-    if (backStack.isEmpty()) return backStack
+): NavResult {
+    if (backStack.isEmpty()) return NavResult(backStack)
 
     return when (event) {
-        is MainNavEvent.BottomTabClick -> switchBottomTab(backStack, event.target)
+        is MainNavEvent.BottomTabClick -> NavResult(switchBottomTab(backStack, event.target))
         is MainNavEvent.CalendarDateSelected ->
-            pushWrite(backStack, event.date, event.mode, editDiaryId = null)
+            NavResult(pushWrite(backStack, event.date, event.mode, editDiaryId = null))
         is MainNavEvent.DiaryWriteClick ->
-            pushWrite(backStack, event.date, event.mode, editDiaryId = null)
+            NavResult(pushWrite(backStack, event.date, event.mode, editDiaryId = null))
         is MainNavEvent.DiaryEditClick ->
-            pushWrite(backStack, event.date, WriteMode.VIEW, editDiaryId = event.editDiaryId)
+            NavResult(
+                backStack = pushWrite(
+                    backStack,
+                    event.date,
+                    WriteMode.VIEW,
+                    editDiaryId = event.editDiaryId
+                ),
+                effects = listOf(MainNavEffect.ConsumeEditDiary(event.editDiaryId))
+            )
         is MainNavEvent.WriteAddClick ->
-            pushWrite(backStack, event.date, WriteMode.ADD, editDiaryId = null)
-        MainNavEvent.WriteBack -> popOne(backStack)
-        MainNavEvent.WriteSaveComplete -> popOne(backStack)
-        MainNavEvent.WriteDeleteComplete -> popOne(backStack)
+            NavResult(pushWrite(backStack, event.date, WriteMode.ADD, editDiaryId = null))
+        MainNavEvent.WriteBack ->
+            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
+        MainNavEvent.WriteSaveComplete ->
+            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
+        MainNavEvent.WriteDeleteComplete ->
+            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
     }
 }
 
@@ -45,10 +56,6 @@ private fun switchBottomTab(
     } else {
         listOf(target)
     }
-}
-
-private fun popOne(backStack: List<MainDestination>): List<MainDestination> {
-    return if (backStack.size > 1) backStack.dropLast(1) else backStack
 }
 
 private fun pushWrite(
