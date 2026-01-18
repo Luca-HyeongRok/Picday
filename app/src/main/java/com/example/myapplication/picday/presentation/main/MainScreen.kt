@@ -1,31 +1,17 @@
 package com.example.myapplication.picday.presentation.main
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.animation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,25 +30,23 @@ import com.example.myapplication.picday.presentation.common.SharedViewModel
 import com.example.myapplication.picday.presentation.navigation.MainNavHost
 import com.example.myapplication.picday.presentation.navigation.Screen
 import com.example.myapplication.picday.presentation.navigation.WriteMode
+import com.example.myapplication.picday.presentation.theme.AppColors
+import com.example.myapplication.picday.presentation.theme.AppShapes
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    // 탭 간 데이터 공유를 위한 SharedViewModel
     val sharedViewModel: SharedViewModel = viewModel()
-
-    val items = listOf(Screen.Calendar, Screen.Diary)
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
     
-    // Write 모드인지 확인 (Bottom Bar 숨김 처리용)
     val isWriteMode = currentRoute?.startsWith("write") == true
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             AnimatedVisibility(
                 visible = !isWriteMode,
@@ -73,27 +57,30 @@ fun MainScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 32.dp),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Surface (
+                    // 1. Navigation Shell (The background pill)
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(72.dp)
                             .shadow(
-                                elevation = 12.dp,
-                                shape = RoundedCornerShape(36.dp),
-                                spotColor = Color.Black.copy(alpha = 0.1f)
+                                elevation = 16.dp,
+                                shape = AppShapes.BottomNav,
+                                ambientColor = AppColors.ShadowColor,
+                                spotColor = AppColors.ShadowColor
                             ),
-                        shape = RoundedCornerShape(36.dp),
-                        color = Color.White.copy(alpha = 0.95f),
-                        tonalElevation = 2.dp
+                        shape = AppShapes.BottomNav,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        tonalElevation = 4.dp
                     ) {
                         Row(
                             modifier = Modifier.fillMaxSize(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // 캘린더 탭
+                            // Left Tab: Calendar
                             BottomNavItem(
                                 screen = Screen.Calendar,
                                 isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Calendar.route } == true,
@@ -108,28 +95,10 @@ fun MainScreen() {
                                 }
                             )
 
-                            // 중앙 '+' (Write) 버튼
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF2D2D2D))
-                                    .clickable {
-                                        navController.navigate(
-                                            Screen.Write.createRoute(selectedDate, WriteMode.ADD)
-                                        )
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "기록 추가",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
+                            // Spacer for Center Fab
+                            Box(modifier = Modifier.width(64.dp))
 
-                            // 다이어리 탭
+                            // Right Tab: Diary
                             BottomNavItem(
                                 screen = Screen.Diary,
                                 isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Diary.route } == true,
@@ -145,6 +114,33 @@ fun MainScreen() {
                             )
                         }
                     }
+
+                    // 2. Floating Center "+" Button
+                    Box(
+                        modifier = Modifier
+                            .offset(y = (-32).dp)
+                            .size(64.dp)
+                            .shadow(
+                                elevation = 12.dp,
+                                shape = CircleShape,
+                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                            )
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable {
+                                navController.navigate(
+                                    Screen.Write.createRoute(selectedDate, WriteMode.ADD)
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "기록 추가",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
         }
@@ -152,7 +148,7 @@ fun MainScreen() {
         MainNavHost(
             navController = navController,
             sharedViewModel = sharedViewModel,
-            innerPadding = PaddingValues(0.dp) // 하단 바가 떠 있으므로 패딩 직접 조절
+            innerPadding = PaddingValues(0.dp)
         )
     }
 }
@@ -163,28 +159,35 @@ private fun BottomNavItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Column (
+    val interactionSource = remember { MutableInteractionSource() }
+    
+    // Icon Logic for styling
+    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+
+    Column(
         modifier = Modifier
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = screen.icon,
             contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = if (isSelected) Color(0xFF2D2D2D) else Color(0xFFBBBBBB)
+            modifier = Modifier.size(26.dp),
+            tint = color
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = screen.title,
-            fontSize = 11.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color(0xFF2D2D2D) else Color(0xFFBBBBBB)
+            fontSize = 10.sp,
+            fontWeight = fontWeight,
+            color = color,
+            letterSpacing = 0.5.sp
         )
     }
 }

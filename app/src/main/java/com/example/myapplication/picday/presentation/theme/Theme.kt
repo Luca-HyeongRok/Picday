@@ -1,5 +1,6 @@
 package com.example.myapplication.picday.presentation.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,35 +9,37 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = AppColors.Primary,
+    background = AppColors.BackgroundDark,
+    surface = AppColors.SurfaceDark,
+    onBackground = AppColors.TextMainDark,
+    onSurface = AppColors.TextMainDark,
+    surfaceVariant = AppColors.SurfaceDark.copy(alpha = 0.5f),
+    onSurfaceVariant = AppColors.TextSubDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = AppColors.Primary,
+    background = AppColors.BackgroundLight,
+    surface = AppColors.SurfaceLight,
+    onBackground = AppColors.TextMainLight,
+    onSurface = AppColors.TextMainLight,
+    surfaceVariant = AppColors.BackgroundLight,
+    onSurfaceVariant = AppColors.TextSubLight
 )
 
 @Composable
 fun PicDayTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Keep dynamicColor false to maintain our custom minimalist branding
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -48,10 +51,33 @@ fun PicDayTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val context = view.context
+            var currentContext = context
+            while (currentContext is android.content.ContextWrapper) {
+                if (currentContext is Activity) break
+                currentContext = currentContext.baseContext
+            }
+            val activity = currentContext as? Activity
+            activity?.window?.let { window ->
+                @Suppress("DEPRECATION")
+                window.statusBarColor = ColorSchemeToStatusBarColor(colorScheme, darkTheme)
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            }
+        }
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
     )
+}
+
+private fun ColorSchemeToStatusBarColor(scheme: androidx.compose.material3.ColorScheme, isDark: Boolean): Int {
+    // Return background color or primary color based on theme
+    return scheme.background.toArgb()
 }
