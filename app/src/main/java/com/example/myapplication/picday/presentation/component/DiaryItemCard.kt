@@ -60,6 +60,12 @@ fun DiaryRecordCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = 2.dp,
+                shape = AppShapes.Card,
+                ambientColor = AppColors.ShadowColor,
+                spotColor = AppColors.ShadowColor
+            )
             .then(
                 if (onClick != null) {
                     Modifier.clickable(
@@ -72,17 +78,10 @@ fun DiaryRecordCard(
         shape = AppShapes.Card,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        shadowElevation = 0.dp // Using custom shadow below for more control
+        shadowElevation = 0.dp
     ) {
         Box(
-            modifier = Modifier
-                .shadow(
-                    elevation = 2.dp,
-                    shape = AppShapes.Card,
-                    ambientColor = AppColors.ShadowColor,
-                    spotColor = AppColors.ShadowColor
-                )
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
