@@ -22,28 +22,52 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import com.example.myapplication.picday.presentation.common.SharedViewModel
-import com.example.myapplication.picday.presentation.navigation.MainNavHost
+import com.example.myapplication.picday.presentation.calendar.CalendarScreen
+import com.example.myapplication.picday.presentation.diary.DiaryRoot
+import com.example.myapplication.picday.presentation.diary.DiaryRootScreen
+import com.example.myapplication.picday.presentation.diary.DiaryViewModel
 import com.example.myapplication.picday.presentation.navigation.Screen
 import com.example.myapplication.picday.presentation.navigation.WriteMode
 import com.example.myapplication.picday.presentation.theme.AppColors
 import com.example.myapplication.picday.presentation.theme.AppShapes
+import java.time.LocalDate
+import kotlinx.serialization.Serializable
 
+@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
     val sharedViewModel: SharedViewModel = viewModel()
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-    val currentRoute = currentDestination?.route
     
-    val isWriteMode = currentRoute?.startsWith("write") == true
+    val backStack = rememberNavBackStack(MainDestination.Calendar)
+    val currentDestination = backStack.last()
+    val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
+
+    fun navigateToTopLevel(target: MainDestination) {
+        while (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+        if (backStack.last() != target) {
+            backStack.add(target)
+        }
+    }
+
+    fun navigateToWrite(date: LocalDate, mode: WriteMode, editDiaryId: String? = null) {
+        backStack.add(
+            MainDestination.Write(
+                date = date.toString(),
+                mode = mode.name,
+                editDiaryId = editDiaryId
+            )
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -83,15 +107,9 @@ fun MainScreen() {
                             // Left Tab: Calendar
                             BottomNavItem(
                                 screen = Screen.Calendar,
-                                isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Calendar.route } == true,
+                                isSelected = currentDestination is MainDestination.Calendar,
                                 onClick = {
-                                    navController.navigate(Screen.Calendar.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    navigateToTopLevel(MainDestination.Calendar)
                                 }
                             )
 
@@ -101,15 +119,9 @@ fun MainScreen() {
                             // Right Tab: Diary
                             BottomNavItem(
                                 screen = Screen.Diary,
-                                isSelected = currentDestination?.hierarchy?.any { it.route == Screen.Diary.route } == true,
+                                isSelected = currentDestination is MainDestination.Diary,
                                 onClick = {
-                                    navController.navigate(Screen.Diary.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    navigateToTopLevel(MainDestination.Diary)
                                 }
                             )
                         }
@@ -128,9 +140,7 @@ fun MainScreen() {
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
-                                navController.navigate(
-                                    Screen.Write.createRoute(selectedDate, WriteMode.ADD)
-                                )
+                                navigateToWrite(selectedDate, WriteMode.ADD)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -145,12 +155,87 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        MainNavHost(
-            navController = navController,
-            sharedViewModel = sharedViewModel,
-            innerPadding = PaddingValues(0.dp)
+        NavDisplay(
+            backStack = backStack,
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator()
+            ),
+            onBack = {
+                if (backStack.size > 1) {
+                    backStack.removeAt(backStack.lastIndex)
+                }
+            },
+            entryProvider = entryProvider {
+                entry<MainDestination.Calendar> {
+                    val diaryViewModel: DiaryViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+
+                    CalendarScreen(
+                        onDateSelected = { date ->
+                            sharedViewModel.updateSelectedDate(date)
+
+                            val mode = if (diaryViewModel.hasAnyRecord(date)) {
+                                WriteMode.VIEW
+                            } else {
+                                WriteMode.ADD
+                            }
+
+                            navigateToWrite(date, mode)
+                        }
+                    )
+                }
+
+                entry<MainDestination.Diary> {
+                    DiaryRoot(
+                        screen = DiaryRootScreen.DIARY,
+                        selectedDate = selectedDate,
+                        onWriteClick = { date, mode ->
+                            navigateToWrite(date, mode)
+                        },
+                        onEditClick = { diaryId ->
+                            navigateToWrite(selectedDate, WriteMode.VIEW, diaryId)
+                        }
+                    )
+                }
+
+                entry<MainDestination.Write> { destination ->
+                    val date = LocalDate.parse(destination.date)
+                    val mode = WriteMode.valueOf(destination.mode)
+                    val writeViewModel: com.example.myapplication.picday.presentation.write.WriteViewModel =
+                        androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+
+                    DiaryRoot(
+                        screen = DiaryRootScreen.WRITE,
+                        selectedDate = date,
+                        writeMode = mode,
+                        editDiaryId = destination.editDiaryId,
+                        onBack = { backStack.removeAt(backStack.lastIndex) },
+                        onSaveComplete = { backStack.removeAt(backStack.lastIndex) },
+                        onDelete = {
+                            writeViewModel.onDelete(it)
+                            backStack.removeAt(backStack.lastIndex)
+                        }
+                    )
+                }
+            }
         )
     }
+}
+
+@Serializable
+private sealed interface MainDestination : NavKey {
+    @Serializable
+    data object Calendar : MainDestination
+
+    @Serializable
+    data object Diary : MainDestination
+
+    @Serializable
+    data class Write(
+        val date: String,
+        val mode: String,
+        val editDiaryId: String? = null
+    ) : MainDestination
 }
 
 @Composable
