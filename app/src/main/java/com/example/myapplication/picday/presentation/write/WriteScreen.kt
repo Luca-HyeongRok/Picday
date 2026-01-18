@@ -1,5 +1,6 @@
 package com.example.myapplication.picday.presentation.write
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.picday.presentation.component.WriteTopBar
 import com.example.myapplication.picday.presentation.diary.DiaryUiItem
@@ -80,6 +82,7 @@ fun WriteScreen(
     }
 
     Scaffold(
+        containerColor = Color(0xFFF8F9FB),
         topBar = {
             WriteTopBar(
                 date = selectedDate,
@@ -98,7 +101,8 @@ fun WriteScreen(
             modifier = Modifier
                 .padding(padding)
                 .padding(horizontal = 24.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FB)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             WriteContent(

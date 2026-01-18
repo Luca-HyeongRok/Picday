@@ -4,6 +4,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -13,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.core.content.FileProvider
@@ -34,10 +34,14 @@ import androidx.core.content.ContextCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -45,6 +49,7 @@ import com.example.myapplication.picday.BuildConfig
 import com.example.myapplication.picday.R
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoState
+import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun ColumnScope.WriteEditContent(
@@ -59,7 +64,7 @@ fun ColumnScope.WriteEditContent(
     onPhotoClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    fun onImagesPicked(uris: List<android.net.Uri>) {
+    fun onImagesPicked(uris: List<Uri>) {
         if (uris.isEmpty()) return
         onPhotosAdded(uris.map { it.toString() })
     }
@@ -109,7 +114,6 @@ fun ColumnScope.WriteEditContent(
                 takePictureLauncher.launch(uri)
             }
         } else {
-            // 거부됨 - rationale은 이미 체크했으므로 여기서는 장기 거부 가능성 있음
             val activity = context as? ComponentActivity
             if (activity != null && !ActivityCompat.shouldShowRequestPermissionRationale(activity, android.Manifest.permission.CAMERA)) {
                 showSettingsDialog = true
@@ -174,90 +178,59 @@ fun ColumnScope.WriteEditContent(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // Cover Photo Area
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+    // 1. Cover Photo Area
+    WriteCoverPhoto(
+        coverPhotoUri = coverPhotoUri,
+        onClick = { handleCameraClick() }
+    )
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // 2. Action Bar
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(2.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
     ) {
-        WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
-    }
-
-    Spacer(modifier = Modifier.height(32.dp))
-
-    // Photo Buttons Area (Camera & Gallery)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Camera Button
-        Button(
-            onClick = { handleCameraClick() },
-            modifier = Modifier.weight(1f).height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(imageVector = Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("카메라", style = MaterialTheme.typography.titleSmall)
-        }
-
-        // Gallery Button
-        Button(
-            onClick = {
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            },
-            modifier = Modifier.weight(1f).height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("갤러리", style = MaterialTheme.typography.titleSmall)
-        }
-    }
-
-    if (BuildConfig.DEBUG) {
-        OutlinedButton(
-            onClick = {
-                val existingUris = photoItems.map { it.uri }.toSet()
-                val nextSampleUri = listOf(
-                    R.drawable.sample_photo_1,
-                    R.drawable.sample_photo_2,
-                    R.drawable.sample_photo_3,
-                    R.drawable.sample_photo_4
-                )
-                    .map { resId ->
-                        "android.resource://${context.packageName}/$resId"
-                    }
-                    .firstOrNull { it !in existingUris }
-                if (nextSampleUri != null) {
-                    onPhotosAdded(listOf(nextSampleUri))
+            TextButton(
+                onClick = { handleCameraClick() },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                shape = RoundedCornerShape(0.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(imageVector = Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color(0xFF333333))
+                    Text("카메라", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF333333)))
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text("샘플 사진 추가 (DEBUG)")
+            }
+            VerticalDivider(modifier = Modifier.height(24.dp), thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.3f))
+            TextButton(
+                onClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                shape = RoundedCornerShape(0.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color(0xFF333333))
+                    Text("갤러리", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF333333)))
+                }
+            }
         }
     }
 
+    // 3. Thumbnails
     val visiblePhotoItems = photoItems.filter { it.state != WritePhotoState.DELETE }
     if (visiblePhotoItems.isNotEmpty()) {
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
             items(visiblePhotoItems, key = { it.id }) { item ->
                 PhotoThumbnail(
@@ -267,131 +240,150 @@ fun ColumnScope.WriteEditContent(
                 )
             }
         }
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // Title Field
-    OutlinedTextField(
-        value = title,
-        onValueChange = onTitleChange,
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text("제목") },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
-    )
-
-    Spacer(modifier = Modifier.height(16.dp))
-
-    // Content Field
-    OutlinedTextField(
-        value = content,
-        onValueChange = onContentChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .weight(1f),
-        label = { Text("오늘의 기록") },
-        placeholder = { Text("오늘의 기억을 남겨보세요") },
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
-    )
-}
-
-@Composable
-internal fun WriteCoverPhoto(coverPhotoUri: String?) {
-    if (coverPhotoUri != null) {
-        CoverPhoto(uri = coverPhotoUri)
     } else {
-        // Rounded Placeholder
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add, // Or a Camera icon if available, sticking to Add/Edit vibe
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                modifier = Modifier.size(48.dp)
-            )
-        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
-}
 
-@Composable
-private fun PhotoThumbnail(
-    uri: String,
-    onRemove: () -> Unit,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(88.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .clickable { onClick() },
-        contentAlignment = Alignment.TopEnd
+    // 4. Input Fields
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(uri)
-                .crossfade(true)
-                .build(),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+        TextField(
+            value = title,
+            onValueChange = onTitleChange,
+            placeholder = { Text("제목", color = Color.Gray.copy(alpha = 0.5f)) },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White.copy(alpha = 0.7f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color(0xFF546089)
+            ),
+            textStyle = TextStyle(fontSize = 16.sp),
+            singleLine = true
         )
 
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.size(32.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .background(
-                        color = Color.Black.copy(alpha = 0.6f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+        TextField(
+            value = content,
+            onValueChange = onContentChange,
+            placeholder = { Text("오늘의 기록", color = Color.Gray.copy(alpha = 0.5f)) },
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            shape = RoundedCornerShape(20.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White.copy(alpha = 0.7f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color(0xFF546089)
+            ),
+            textStyle = TextStyle(fontSize = 16.sp)
+        )
+    }
+
+    if (BuildConfig.DEBUG) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            OutlinedButton(
+                onClick = {
+                    val existingUris = photoItems.map { it.uri }.toSet()
+                    val sampleRes = listOf(R.drawable.sample_photo_1, R.drawable.sample_photo_2, R.drawable.sample_photo_3, R.drawable.sample_photo_4)
+                    val next = sampleRes.map { "android.resource://${context.packageName}/$it" }.firstOrNull { it !in existingUris }
+                    next?.let { onPhotosAdded(listOf(it)) }
+                },
+                shape = RoundedCornerShape(100),
+                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                modifier = Modifier.height(28.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "사진 삭제",
-                    tint = Color.White,
-                    modifier = Modifier.size(12.dp)
-                )
+                Text("샘플 사진 추가 (DEBUG)", style = TextStyle(fontSize = 9.sp, color = Color.LightGray))
             }
         }
     }
 }
 
 @Composable
-private fun CoverPhoto(uri: String) {
+private fun PhotoThumbnail(uri: String, onRemove: () -> Unit, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(220.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
+            .size(80.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.3f))
+            .clickable { onClick() },
+        contentAlignment = Alignment.TopEnd
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(uri)
-                .crossfade(true)
-                .build(),
+            model = ImageRequest.Builder(LocalContext.current).data(uri).crossfade(true).build(),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+        IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+            Box(modifier = Modifier.size(18.dp).background(Color.Black.copy(alpha = 0.4f), CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Close, contentDescription = "사진 삭제", tint = Color.White, modifier = Modifier.size(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun WriteCoverPhoto(
+    coverPhotoUri: String?,
+    onClick: () -> Unit = {}
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.1f)
+                    )
+                )
+            )
+            .clickable { onClick() }
+            .then(
+                if (coverPhotoUri == null) {
+                    Modifier.border(BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)), RoundedCornerShape(32.dp))
+                } else Modifier
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (coverPhotoUri != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(coverPhotoUri)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.Gray.copy(alpha = 0.3f)
+                )
+                Text(
+                    text = "사진 추가",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = Color.Gray.copy(alpha = 0.4f),
+                        letterSpacing = 1.sp
+                    )
+                )
+            }
+        }
     }
 }
