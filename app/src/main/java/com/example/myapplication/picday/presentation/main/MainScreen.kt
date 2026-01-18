@@ -52,6 +52,7 @@ fun MainScreen() {
     val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
     var pendingEffects by remember { mutableStateOf<List<MainNavEffect>>(emptyList()) }
+    var pendingEffectsVersion by remember { mutableStateOf(0) }
     var pendingEditDiaryId by remember { mutableStateOf<String?>(null) }
 
     fun dispatchNav(event: MainNavEvent) {
@@ -60,9 +61,10 @@ fun MainScreen() {
         backStack.clear()
         backStack.addAll(result.backStack)
         pendingEffects = result.effects
+        pendingEffectsVersion += 1
     }
 
-    LaunchedEffect(pendingEffects) {
+    LaunchedEffect(pendingEffectsVersion) {
         if (pendingEffects.isEmpty()) return@LaunchedEffect
 
         pendingEffects.forEach { effect ->

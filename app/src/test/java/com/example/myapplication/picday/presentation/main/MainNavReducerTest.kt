@@ -16,10 +16,10 @@ class MainNavReducerTest {
         )
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.BottomTabClick(MainDestination.Diary))
+        val result = reduceMainNav(backStack, MainNavEvent.BottomTabClick(MainDestination.Diary))
 
         // Then
-        assertEquals(listOf(MainDestination.Diary), next)
+        assertEquals(listOf(MainDestination.Diary), result.backStack)
     }
 
     @Test
@@ -29,7 +29,7 @@ class MainNavReducerTest {
         val backStack = listOf<MainDestination>(MainDestination.Calendar)
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.WriteAddClick(date))
+        val result = reduceMainNav(backStack, MainNavEvent.WriteAddClick(date))
 
         // Then
         assertEquals(
@@ -37,7 +37,7 @@ class MainNavReducerTest {
                 MainDestination.Calendar,
                 MainDestination.Write(date.toString(), WriteMode.ADD.name, null)
             ),
-            next
+            result.backStack
         )
     }
 
@@ -50,10 +50,10 @@ class MainNavReducerTest {
         )
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.WriteBack)
+        val result = reduceMainNav(backStack, MainNavEvent.WriteBack)
 
         // Then
-        assertEquals(listOf(MainDestination.Calendar), next)
+        assertEquals(listOf(MainDestination.Calendar), result.backStack)
     }
 
     @Test
@@ -64,7 +64,7 @@ class MainNavReducerTest {
         val backStack = listOf<MainDestination>(MainDestination.Diary)
 
         // When
-        val next = reduceMainNav(
+        val result = reduceMainNav(
             backStack,
             MainNavEvent.DiaryEditClick(date, editDiaryId)
         )
@@ -75,7 +75,7 @@ class MainNavReducerTest {
                 MainDestination.Diary,
                 MainDestination.Write(date.toString(), WriteMode.VIEW.name, editDiaryId)
             ),
-            next
+            result.backStack
         )
     }
 
@@ -88,10 +88,10 @@ class MainNavReducerTest {
         )
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.WriteSaveComplete)
+        val result = reduceMainNav(backStack, MainNavEvent.WriteSaveComplete)
 
         // Then
-        assertEquals(listOf(MainDestination.Calendar), next)
+        assertEquals(listOf(MainDestination.Calendar), result.backStack)
     }
 
     @Test
@@ -103,10 +103,10 @@ class MainNavReducerTest {
         )
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.WriteDeleteComplete)
+        val result = reduceMainNav(backStack, MainNavEvent.WriteDeleteComplete)
 
         // Then
-        assertEquals(listOf(MainDestination.Calendar), next)
+        assertEquals(listOf(MainDestination.Calendar), result.backStack)
     }
 
     @Test
@@ -115,10 +115,10 @@ class MainNavReducerTest {
         val backStack = listOf<MainDestination>(MainDestination.Calendar)
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.WriteBack)
+        val result = reduceMainNav(backStack, MainNavEvent.WriteBack)
 
         // Then
-        assertEquals(listOf(MainDestination.Calendar), next)
+        assertEquals(listOf(MainDestination.Calendar), result.backStack)
     }
 
     @Test
@@ -127,10 +127,10 @@ class MainNavReducerTest {
         val backStack = listOf<MainDestination>(MainDestination.Calendar)
 
         // When
-        val next = reduceMainNav(backStack, MainNavEvent.BottomTabClick(MainDestination.Calendar))
+        val result = reduceMainNav(backStack, MainNavEvent.BottomTabClick(MainDestination.Calendar))
 
         // Then
-        assertEquals(listOf(MainDestination.Calendar), next)
+        assertEquals(listOf(MainDestination.Calendar), result.backStack)
     }
 
     @Test
