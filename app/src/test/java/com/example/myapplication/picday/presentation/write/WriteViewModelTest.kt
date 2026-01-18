@@ -85,7 +85,10 @@ class WriteViewModelTest {
         viewModel.onPhotosAdded(listOf("uri2"))
 
         // Then: 리스트의 첫 번째(대표 사진)는 uri2여야 함
-        assertEquals("uri2", viewModel.getCoverPhotoUri())
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("uri2", viewModel.getCoverPhotoUri())
+        }
     }
 
     /**
