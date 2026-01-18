@@ -40,8 +40,11 @@ private fun switchBottomTab(
     backStack: List<MainDestination>,
     target: MainDestination
 ): List<MainDestination> {
-    val root = listOf(backStack.first())
-    return if (root.last() == target) root else root + target
+    return if (backStack.first() == target) {
+        backStack
+    } else {
+        listOf(target)
+    }
 }
 
 private fun popOne(backStack: List<MainDestination>): List<MainDestination> {
