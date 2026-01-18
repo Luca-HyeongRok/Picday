@@ -1,7 +1,9 @@
 package com.example.myapplication.picday.presentation.diary
 
-import com.example.myapplication.picday.domain.repository.DiaryRepository
 import com.example.myapplication.picday.domain.diary.deriveCoverPhotoUri
+import com.example.myapplication.picday.domain.repository.DiaryRepository
+import com.example.myapplication.picday.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.firstOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
@@ -13,12 +15,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 @HiltViewModel
 class DiaryViewModel @Inject constructor(
-    // Repository 생성 책임은 외부로 분리한다.
-    private val repository: DiaryRepository
+    private val repository: DiaryRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
@@ -56,12 +59,18 @@ class DiaryViewModel @Inject constructor(
             
             // 각 날짜별 최신 일기의 커버 사진 획득
             dates.forEach { date ->
-                val latestDiary = diariesByDate[date]?.maxByOrNull { it.createdAt }
-                if (latestDiary != null) {
-                    val photos = repository.getPhotos(latestDiary.id)
-                    coverMap[date] = deriveCoverPhotoUri(photos)
+                // 먼저 저장된 대표 사진이 있는지 확인
+                val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
+                if (savedCover != null) {
+                    coverMap[date] = savedCover
                 } else {
-                    coverMap[date] = null
+                    val latestDiary = diariesByDate[date]?.maxByOrNull { it.createdAt }
+                    if (latestDiary != null) {
+                        val photos = repository.getPhotos(latestDiary.id)
+                        coverMap[date] = deriveCoverPhotoUri(photos)
+                    } else {
+                        coverMap[date] = null
+                    }
                 }
             }
 
@@ -78,15 +87,30 @@ class DiaryViewModel @Inject constructor(
         updateJob = viewModelScope.launch(Dispatchers.IO) {
             val items = repository.getByDate(date)
                 .sortedBy { it.createdAt }
-            var coverForDate: String? = null
-            val lastIndex = items.lastIndex
+            
+            // 전수 사진 수집 (기록 생성 순 -> 사진 생성 순)
+            val allPhotos = items.flatMap { diary ->
+                repository.getPhotos(diary.id).map { it.uri }
+            }.distinct()
+
+            // 저장된 대표 사진 가져오기
+            val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
+            
+            // 정렬 및 대표 사진 처리
+            val sortedPhotos = if (savedCover != null && allPhotos.contains(savedCover)) {
+                // 대표 사진을 가장 앞으로
+                listOf(savedCover) + (allPhotos - savedCover)
+            } else {
+                allPhotos
+            }
+
+            var coverForDate: String? = sortedPhotos.firstOrNull()
+            
             val uiItems = items.mapIndexed { index, diary ->
                 val photos = repository.getPhotos(diary.id)
                 val photoUris = photos.map { it.uri }
                 val coverPhotoUri = deriveCoverPhotoUri(photos)
-                if (index == lastIndex) {
-                    coverForDate = coverPhotoUri
-                }
+                
                 DiaryUiItem(
                     id = diary.id,
                     date = diary.date,
@@ -100,12 +124,22 @@ class DiaryViewModel @Inject constructor(
                 it.copy(
                     selectedDate = date,
                     items = items,
-                    uiItems = uiItems
+                    uiItems = uiItems,
+                    allPhotosForDate = sortedPhotos,
+                    initialPageIndex = 0 // 위에서 이미 front로 옮겼으므로 항상 0
                 )
             }
             _coverPhotoByDate.update { current ->
                 current + mapOf(date to coverForDate)
             }
+        }
+    }
+
+    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
+        withContext(Dispatchers.IO) {
+            settingsRepository.setDateCoverPhotoUri(date, uri)
+            // 즉시 UI 반영을 위해 coverPhotoByDate 업데이트
+            _coverPhotoByDate.update { it + (date to uri) }
         }
     }
 }
