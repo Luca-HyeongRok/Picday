@@ -119,23 +119,30 @@ class WriteViewModelTest {
         repository.addDiaryForDate(date, "Title", "Content", listOf("old_uri"))
         val existingDiaryId = repository.getByDate(date)[0].id
 
-        // When: 수정 모드 진입 및 신규 사진 추가
-        // Note: Viewmodel의 onEditClicked는 내부에서 viewModelScope.launch(IO)를 사용하므로
-        // UnconfinedTestDispatcher를 사용하는 MainDispatcherRule 덕분에 즉시 완료됨
+        // When: 수정 모드 진입
         viewModel.onEditClicked(existingDiaryId)
-        viewModel.onPhotosAdded(listOf("new_uri"))
 
-        // Then: 기존 old_uri(KEEP 상태)와 신규 new_uri(NEW 상태)가 모두 있어야 함
+        // Then: EDIT 상태로 전환될 때까지 대기 후 신규 사진 추가 및 검증
         viewModel.uiState.test {
-            val state = awaitItem()
-            assertEquals(WriteUiMode.EDIT, state.uiMode)
-            assertEquals(2, state.photoItems.size)
+            // 초기 상태 또는 다른 상태에서 EDIT로 변할 때까지 대기
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
             
-            val states = state.photoItems.map { it.state }
+            // 수동으로 신규 사진 추가
+            viewModel.onPhotosAdded(listOf("new_uri"))
+            
+            // 신규 사진이 추가된 최종 상태 확인
+            val finalState = awaitItem()
+            assertEquals(WriteUiMode.EDIT, finalState.uiMode)
+            assertEquals(2, finalState.photoItems.size)
+            
+            val states = finalState.photoItems.map { it.state }
             assertTrue(states.contains(WritePhotoState.KEEP))
             assertTrue(states.contains(WritePhotoState.NEW))
             
-            val uris = state.photoItems.map { it.uri }
+            val uris = finalState.photoItems.map { it.uri }
             assertTrue(uris.contains("old_uri"))
             assertTrue(uris.contains("new_uri"))
         }
