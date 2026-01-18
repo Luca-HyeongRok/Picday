@@ -10,9 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -227,6 +230,19 @@ fun MainScreen() {
                         .getOrElse { WriteMode.ADD }
                     val writeViewModel: com.example.myapplication.picday.presentation.write.WriteViewModel =
                         androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+                    val writeState by writeViewModel.uiState.collectAsState()
+                    var pendingDelete by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(pendingDelete, writeState.uiMode, writeState.editingDiaryId) {
+                        if (
+                            pendingDelete &&
+                            writeState.uiMode == com.example.myapplication.picday.presentation.write.state.WriteUiMode.VIEW &&
+                            writeState.editingDiaryId == null
+                        ) {
+                            pendingDelete = false
+                            onWriteDelete()
+                        }
+                    }
 
                     DiaryRoot(
                         screen = DiaryRootScreen.WRITE,
@@ -236,8 +252,8 @@ fun MainScreen() {
                         onBack = { onWriteBack() },
                         onSaveComplete = { onWriteSaveComplete() },
                         onDelete = {
+                            pendingDelete = true
                             writeViewModel.onDelete(it)
-                            onWriteDelete()
                         }
                     )
                 }
