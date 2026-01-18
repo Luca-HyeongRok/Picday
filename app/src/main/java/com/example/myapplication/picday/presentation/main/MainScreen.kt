@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -222,23 +221,18 @@ fun MainScreen() {
                 }
 
                 entry<MainDestination.Write> { destination ->
-                    val date = LocalDate.parse(destination.date)
-                    val mode = WriteMode.valueOf(destination.mode)
+                    val date = runCatching { LocalDate.parse(destination.date) }
+                        .getOrElse { selectedDate }
+                    val mode = runCatching { WriteMode.valueOf(destination.mode) }
+                        .getOrElse { WriteMode.ADD }
                     val writeViewModel: com.example.myapplication.picday.presentation.write.WriteViewModel =
                         androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
-
-                    LaunchedEffect(destination.editDiaryId) {
-                        val editDiaryId = destination.editDiaryId
-                        if (editDiaryId != null) {
-                            writeViewModel.onEditClicked(editDiaryId)
-                        }
-                    }
 
                     DiaryRoot(
                         screen = DiaryRootScreen.WRITE,
                         selectedDate = date,
                         writeMode = mode,
-                        editDiaryId = null,
+                        editDiaryId = destination.editDiaryId,
                         onBack = { onWriteBack() },
                         onSaveComplete = { onWriteSaveComplete() },
                         onDelete = {
