@@ -32,9 +32,14 @@ fun DiaryRoot(
     val writeViewModel: WriteViewModel = hiltViewModel()
     val diaryState by diaryViewModel.uiState.collectAsState()
     val writeState by writeViewModel.uiState.collectAsState()
+    val lastDiaryItem = diaryState.uiItems.lastOrNull()
     val coverPhotoUri = when (writeState.uiMode) {
-        WriteUiMode.VIEW -> diaryState.uiItems.lastOrNull()?.coverPhotoUri
+        WriteUiMode.VIEW -> lastDiaryItem?.coverPhotoUri
         else -> writeViewModel.getCoverPhotoUri()
+    }
+    val viewModePhotoUris = when (writeState.uiMode) {
+        WriteUiMode.VIEW -> lastDiaryItem?.photoUris ?: emptyList()
+        else -> emptyList()
     }
 
     LaunchedEffect(selectedDate) {
@@ -69,6 +74,7 @@ fun DiaryRoot(
                 items = diaryState.uiItems,
                 writeState = writeState,
                 coverPhotoUri = coverPhotoUri,
+                viewModePhotoUris = viewModePhotoUris,
                 onBack = onBack,
                 onSave = {
                     writeViewModel.onSave(selectedDate)

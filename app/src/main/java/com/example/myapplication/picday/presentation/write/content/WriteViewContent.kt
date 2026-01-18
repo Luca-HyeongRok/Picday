@@ -20,11 +20,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import com.example.myapplication.picday.presentation.write.photo.WritePhotoItem
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.Alignment
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 
 @Composable
 fun ColumnScope.WriteContent(
     uiMode: WriteUiMode,
     coverPhotoUri: String?,
+    viewModePhotoUris: List<String> = emptyList(),
     items: List<DiaryUiItem>,
     title: String,
     content: String,
@@ -39,6 +53,7 @@ fun ColumnScope.WriteContent(
     if (uiMode == WriteUiMode.VIEW) {
         WriteViewContent(
             coverPhotoUri = coverPhotoUri,
+            viewModePhotoUris = viewModePhotoUris,
             items = items,
             onAddClick = onAddClick,
             onEditClick = { diary -> onEditClick(diary.id) }
@@ -60,13 +75,18 @@ fun ColumnScope.WriteContent(
 @Composable
 fun ColumnScope.WriteViewContent(
     coverPhotoUri: String?,
+    viewModePhotoUris: List<String> = emptyList(),
     items: List<DiaryUiItem>,
     onAddClick: () -> Unit,
     onEditClick: (DiaryUiItem) -> Unit
 ) {
     Spacer(modifier = Modifier.height(24.dp))
 
-    WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
+    if (viewModePhotoUris.size > 1) {
+        WritePhotoPager(photoUris = viewModePhotoUris)
+    } else {
+        WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
+    }
 
     Spacer(modifier = Modifier.height(32.dp))
 
@@ -123,6 +143,45 @@ fun ColumnScope.WriteViewContent(
             Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("기록 추가하기", style = MaterialTheme.typography.titleSmall)
+        }
+    }
+}
+
+@Composable
+fun WritePhotoPager(photoUris: List<String>) {
+    val pagerState = rememberPagerState(pageCount = { photoUris.size })
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp), // 기존 CoverPhoto(220dp)보다 약간 더 키워서 존재감 부여
+        contentAlignment = Alignment.Center
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            pageSpacing = 16.dp, // 페이지 간 간격
+            beyondViewportPageCount = 1
+        ) { page ->
+            val uri = photoUris[page]
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp) // 좌우 여백을 주어 다음 사진이 살짝 보이게 하거나 깔끔하게 중앙 배치
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(uri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "사진 ${page + 1}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
     }
 }
