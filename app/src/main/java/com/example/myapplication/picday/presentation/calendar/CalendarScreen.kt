@@ -58,7 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -80,21 +80,25 @@ fun CalendarScreen(
     val coverPhotoByDate by diaryViewModel.coverPhotoByDate.collectAsState()
 
     val context = LocalContext.current
+    fun onImagePicked(uri: android.net.Uri?) {
+        if (uri == null) return
+        
+        // 앱 재시작시에도 접근 권한을 유지하기 위해 지속 가능한 권한 요청
+        try {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (e: Exception) {
+            // 권한 획득 실패 시 로그 출력 등 추가 처리가 가능하지만, 우선 그대로 진행
+        }
+        viewModel.setBackgroundUri(uri.toString())
+    }
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        if (uri != null) {
-            // 앱 재시작시에도 접근 권한을 유지하기 위해 지속 가능한 권한 요청
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (e: Exception) {
-                // 권한 획득 실패 시 로그 출력 등 추가 처리가 가능하지만, 우선 그대로 진행
-            }
-            viewModel.setBackgroundUri(uri.toString())
-        }
+        onImagePicked(uri)
     }
 
     var showBackgroundPicker by remember { mutableStateOf(false) }
