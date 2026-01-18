@@ -55,9 +55,18 @@ fun PicDayTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = ColorSchemeToStatusBarColor(colorScheme, darkTheme)
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            val context = view.context
+            var currentContext = context
+            while (currentContext is android.content.ContextWrapper) {
+                if (currentContext is Activity) break
+                currentContext = currentContext.baseContext
+            }
+            val activity = currentContext as? Activity
+            activity?.window?.let { window ->
+                @Suppress("DEPRECATION")
+                window.statusBarColor = ColorSchemeToStatusBarColor(colorScheme, darkTheme)
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            }
         }
     }
 

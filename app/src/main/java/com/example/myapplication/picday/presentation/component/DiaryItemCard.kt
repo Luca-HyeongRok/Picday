@@ -71,7 +71,7 @@ fun DiaryRecordCard(
             ),
         shape = AppShapes.Card,
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerLight.copy(alpha = 0.5f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         shadowElevation = 0.dp // Using custom shadow below for more control
     ) {
         Box(

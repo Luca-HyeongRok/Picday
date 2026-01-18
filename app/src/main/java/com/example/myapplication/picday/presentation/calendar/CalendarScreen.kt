@@ -31,12 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.myapplication.picday.R
 import com.example.myapplication.picday.presentation.diary.DiaryViewModel
-import com.example.myapplication.picday.presentation.theme.AppColors
 import com.example.myapplication.picday.presentation.theme.AppShapes
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -63,7 +61,7 @@ fun CalendarScreen(
                     uri,
                     android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (e: Exception) {}
+            } catch (ignored: Exception) {}
             viewModel.setBackgroundUri(uri.toString())
         }
     }
