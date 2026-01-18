@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 @HiltViewModel
@@ -134,8 +135,8 @@ class DiaryViewModel @Inject constructor(
         }
     }
 
-    fun saveDateCoverPhoto(date: LocalDate, uri: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
+        withContext(Dispatchers.IO) {
             settingsRepository.setDateCoverPhotoUri(date, uri)
             // 즉시 UI 반영을 위해 coverPhotoByDate 업데이트
             _coverPhotoByDate.update { it + (date to uri) }

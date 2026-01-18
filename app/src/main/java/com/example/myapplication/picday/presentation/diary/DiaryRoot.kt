@@ -6,12 +6,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.myapplication.picday.presentation.write.WriteScreen
 import com.example.myapplication.picday.presentation.write.WriteViewModel
 import com.example.myapplication.picday.presentation.write.state.WriteUiMode
 import com.example.myapplication.picday.presentation.navigation.WriteMode
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 enum class DiaryRootScreen {
@@ -35,6 +37,7 @@ fun DiaryRoot(
     val writeViewModel: WriteViewModel = hiltViewModel()
     val diaryState by diaryViewModel.uiState.collectAsState()
     val writeState by writeViewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     var currentPhotoIndex by remember(selectedDate, diaryState.allPhotosForDate) { mutableStateOf(0) }
 
@@ -82,12 +85,19 @@ fun DiaryRoot(
                 coverPhotoUri = coverPhotoUri,
                 viewModePhotoUris = viewModePhotoUris,
                 onBack = {
-                    if (writeState.uiMode == WriteUiMode.VIEW && viewModePhotoUris.isNotEmpty()) {
-                        viewModePhotoUris.getOrNull(currentPhotoIndex)?.let { uri ->
-                            diaryViewModel.saveDateCoverPhoto(selectedDate, uri)
-                        }
+                    val selectedUri = if (writeState.uiMode == WriteUiMode.VIEW) {
+                        viewModePhotoUris.getOrNull(currentPhotoIndex)
+                    } else {
+                        null
                     }
-                    onBack()
+                    if (selectedUri != null) {
+                        coroutineScope.launch {
+                            diaryViewModel.saveDateCoverPhoto(selectedDate, selectedUri)
+                            onBack()
+                        }
+                    } else {
+                        onBack()
+                    }
                 },
                 onSave = {
                     writeViewModel.onSave(selectedDate)
