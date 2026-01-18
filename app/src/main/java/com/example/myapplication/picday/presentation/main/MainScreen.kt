@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -41,7 +40,6 @@ import com.example.myapplication.picday.presentation.navigation.WriteMode
 import com.example.myapplication.picday.presentation.theme.AppColors
 import com.example.myapplication.picday.presentation.theme.AppShapes
 import java.time.LocalDate
-import kotlinx.serialization.Serializable
 
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -260,22 +258,6 @@ fun MainScreen() {
             }
         )
     }
-}
-
-@Serializable
-private sealed interface MainDestination : NavKey {
-    @Serializable
-    data object Calendar : MainDestination
-
-    @Serializable
-    data object Diary : MainDestination
-
-    @Serializable
-    data class Write(
-        val date: String,
-        val mode: String,
-        val editDiaryId: String? = null
-    ) : MainDestination
 }
 
 @Composable
