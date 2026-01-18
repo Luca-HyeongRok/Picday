@@ -51,20 +51,13 @@ class DiaryViewModel @Inject constructor(
         val endDate = dates.maxOrNull() ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
-            // 초기 렌더링에 우선순위를 주기 위해 아주 약간 지연
             kotlinx.coroutines.delay(100)
             
-            // 한 번의 쿼리로 해당 기간의 모든 일기 획득
             val allDiariesInRange = repository.getDiariesByDateRange(startDate, endDate)
-            
-            // 날짜별로 그룹화
             val diariesByDate = allDiariesInRange.groupBy { it.date }
-            
             val coverMap = mutableMapOf<LocalDate, String?>()
             
-            // 각 날짜별 최신 일기의 커버 사진 획득
             dates.forEach { date ->
-                // 먼저 저장된 대표 사진이 있는지 확인
                 val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
                 if (savedCover != null) {
                     coverMap[date] = savedCover
@@ -100,10 +93,8 @@ class DiaryViewModel @Inject constructor(
             _uiState.update { current ->
                 current.copy(
                     selectedDate = date,
-                    items = domainItems,
                     uiItems = uiItems,
                     allPhotosForDate = sortedPhotos,
-                    initialPageIndex = 0,
                     coverPhotoByDate = current.coverPhotoByDate + (date to coverForDate)
                 )
             }
@@ -138,7 +129,6 @@ class DiaryViewModel @Inject constructor(
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
         withContext(Dispatchers.IO) {
             settingsRepository.setDateCoverPhotoUri(date, uri)
-            // 즉시 UI 반영을 위해 uiState 내의 coverPhotoByDate 업데이트
             _uiState.update { current ->
                 current.copy(coverPhotoByDate = current.coverPhotoByDate + (date to uri))
             }
