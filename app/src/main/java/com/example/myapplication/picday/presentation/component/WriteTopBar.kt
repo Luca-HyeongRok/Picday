@@ -9,8 +9,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,6 +25,9 @@ fun WriteTopBar(
     onDelete: (() -> Unit)? = null
 ) {
     CenterAlignedTopAppBar(
+        colors = androidx.compose.material3.TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = Color(0xFFF8F9FB)
+        ),
         title = {
             Text(
                 text = "${date.monthValue}월 ${date.dayOfMonth}일",
@@ -48,9 +53,16 @@ fun WriteTopBar(
             }
             TextButton(
                 onClick = onSave,
-                enabled = canSave
+                enabled = canSave,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFF546089),
+                    disabledContentColor = Color.LightGray.copy(alpha = 0.5f)
+                )
             ) {
-                Text("저장")
+                Text(
+                    text = "저장",
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     )
