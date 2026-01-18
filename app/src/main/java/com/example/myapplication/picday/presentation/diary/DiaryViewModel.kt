@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,8 +28,10 @@ class DiaryViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
-    private val _coverPhotoByDate = MutableStateFlow<Map<LocalDate, String?>>(emptyMap())
-    val coverPhotoByDate: StateFlow<Map<LocalDate, String?>> = _coverPhotoByDate.asStateFlow()
+    
+    val coverPhotoByDate: StateFlow<Map<LocalDate, String?>> = _uiState.asStateFlow()
+        .map { it.coverPhotoByDate }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.coverPhotoByDate)
 
     init {
         updateUiForDate(LocalDate.now())
@@ -74,8 +79,8 @@ class DiaryViewModel @Inject constructor(
                 }
             }
 
-            _coverPhotoByDate.update { current ->
-                current + coverMap
+            _uiState.update { current ->
+                current.copy(coverPhotoByDate = current.coverPhotoByDate + coverMap)
             }
         }
     }
@@ -120,17 +125,15 @@ class DiaryViewModel @Inject constructor(
                     photoUris = photoUris
                 )
             }
-            _uiState.update {
-                it.copy(
+            _uiState.update { current ->
+                current.copy(
                     selectedDate = date,
                     items = items,
                     uiItems = uiItems,
                     allPhotosForDate = sortedPhotos,
-                    initialPageIndex = 0 // 위에서 이미 front로 옮겼으므로 항상 0
+                    initialPageIndex = 0, // 위에서 이미 front로 옮겼으므로 항상 0
+                    coverPhotoByDate = current.coverPhotoByDate + (date to coverForDate)
                 )
-            }
-            _coverPhotoByDate.update { current ->
-                current + mapOf(date to coverForDate)
             }
         }
     }
@@ -138,8 +141,10 @@ class DiaryViewModel @Inject constructor(
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
         withContext(Dispatchers.IO) {
             settingsRepository.setDateCoverPhotoUri(date, uri)
-            // 즉시 UI 반영을 위해 coverPhotoByDate 업데이트
-            _coverPhotoByDate.update { it + (date to uri) }
+            // 즉시 UI 반영을 위해 uiState 내의 coverPhotoByDate 업데이트
+            _uiState.update { current ->
+                current.copy(coverPhotoByDate = current.coverPhotoByDate + (date to uri))
+            }
         }
     }
 }

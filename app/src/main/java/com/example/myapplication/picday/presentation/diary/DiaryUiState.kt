@@ -9,5 +9,6 @@ data class DiaryUiState(
     val uiItems: List<DiaryUiItem> = emptyList(),
     val allPhotosForDate: List<String> = emptyList(),
     val initialPageIndex: Int = 0,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val coverPhotoByDate: Map<LocalDate, String?> = emptyMap()
 )
