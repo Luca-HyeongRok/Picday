@@ -7,5 +7,7 @@ data class DiaryUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val items: List<Diary> = emptyList(),
     val uiItems: List<DiaryUiItem> = emptyList(),
+    val allPhotosForDate: List<String> = emptyList(),
+    val initialPageIndex: Int = 0,
     val isLoading: Boolean = false
 )

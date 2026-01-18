@@ -48,7 +48,8 @@ fun ColumnScope.WriteContent(
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onPhotosAdded: (List<String>) -> Unit,
-    onPhotoRemoved: (String) -> Unit
+    onPhotoRemoved: (String) -> Unit,
+    onPageSelected: (Int) -> Unit = {}
 ) {
     if (uiMode == WriteUiMode.VIEW) {
         WriteViewContent(
@@ -56,7 +57,8 @@ fun ColumnScope.WriteContent(
             viewModePhotoUris = viewModePhotoUris,
             items = items,
             onAddClick = onAddClick,
-            onEditClick = { diary -> onEditClick(diary.id) }
+            onEditClick = { diary -> onEditClick(diary.id) },
+            onPageSelected = onPageSelected
         )
     } else {
         WriteEditContent(
@@ -78,12 +80,16 @@ fun ColumnScope.WriteViewContent(
     viewModePhotoUris: List<String> = emptyList(),
     items: List<DiaryUiItem>,
     onAddClick: () -> Unit,
-    onEditClick: (DiaryUiItem) -> Unit
+    onEditClick: (DiaryUiItem) -> Unit,
+    onPageSelected: (Int) -> Unit = {}
 ) {
     Spacer(modifier = Modifier.height(24.dp))
 
     if (viewModePhotoUris.size > 1) {
-        WritePhotoPager(photoUris = viewModePhotoUris)
+        WritePhotoPager(
+            photoUris = viewModePhotoUris,
+            onPageSelected = onPageSelected
+        )
     } else {
         WriteCoverPhoto(coverPhotoUri = coverPhotoUri)
     }
@@ -148,8 +154,15 @@ fun ColumnScope.WriteViewContent(
 }
 
 @Composable
-fun WritePhotoPager(photoUris: List<String>) {
+fun WritePhotoPager(
+    photoUris: List<String>,
+    onPageSelected: (Int) -> Unit = {}
+) {
     val pagerState = rememberPagerState(pageCount = { photoUris.size })
+
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) {
+        onPageSelected(pagerState.currentPage)
+    }
 
     Box(
         modifier = Modifier
