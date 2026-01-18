@@ -68,46 +68,16 @@ class WriteViewModel @Inject constructor(
 
     fun onPhotosAdded(uris: List<String>) {
         if (uris.isEmpty()) return
-        
         _uiState.update { state ->
-            // 현재 활성화된(삭제되지 않은) 사진들의 URI 집합
-            val existingUris = state.photoItems
-                .filter { it.state != WritePhotoState.DELETE }
-                .map { it.uri }
-                .toSet()
-
-            // 중복되지 않은 신규 URI만 필터링 (입력 리스트 자체 내 중복도 제거)
-            val newUniqueItems = uris.distinct()
-                .filter { it !in existingUris }
-                .map { uri ->
-                    WritePhotoItem(
-                        id = java.util.UUID.randomUUID().toString(),
-                        uri = uri,
-                        state = WritePhotoState.NEW
-                    )
-                }
-
-            if (newUniqueItems.isEmpty()) {
-                state
-            } else {
-                // 새로 추가한 사진들이 앞에 오도록 하여 자동으로 대표 사진(첫 번째)으로 지정
-                state.copy(photoItems = newUniqueItems + state.photoItems)
-            }
+            val newItems = createUniqueNewItems(uris, state.photoItems)
+            if (newItems.isEmpty()) state
+            else state.copy(photoItems = newItems + state.photoItems)
         }
     }
 
     fun onPhotoClicked(photoId: String) {
         _uiState.update { state ->
-            val items = state.photoItems.toMutableList()
-            val index = items.indexOfFirst { it.id == photoId }
-            if (index > 0) {
-                // 선택한 사진을 리스트의 맨 앞으로 이동시켜 대표 사진으로 설정
-                val item = items.removeAt(index)
-                items.add(0, item)
-                state.copy(photoItems = items)
-            } else {
-                state
-            }
+            state.copy(photoItems = reorderWithPriority(photoId, state.photoItems))
         }
     }
 
@@ -178,6 +148,35 @@ class WriteViewModel @Inject constructor(
                 content = "",
                 photoItems = emptyList()
             )
+        }
+    }
+
+    private fun createUniqueNewItems(uris: List<String>, currentItems: List<WritePhotoItem>): List<WritePhotoItem> {
+        val existingUris = currentItems
+            .filter { it.state != WritePhotoState.DELETE }
+            .map { it.uri }
+            .toSet()
+
+        return uris.distinct()
+            .filter { it !in existingUris }
+            .map { uri ->
+                WritePhotoItem(
+                    id = java.util.UUID.randomUUID().toString(),
+                    uri = uri,
+                    state = WritePhotoState.NEW
+                )
+            }
+    }
+
+    private fun reorderWithPriority(targetId: String, currentItems: List<WritePhotoItem>): List<WritePhotoItem> {
+        val items = currentItems.toMutableList()
+        val index = items.indexOfFirst { it.id == targetId }
+        return if (index > 0) {
+            val item = items.removeAt(index)
+            items.add(0, item)
+            items
+        } else {
+            currentItems
         }
     }
 }
