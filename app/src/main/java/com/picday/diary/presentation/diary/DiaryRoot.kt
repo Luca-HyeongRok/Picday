@@ -5,8 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +43,7 @@ fun DiaryRoot(
     val writeState by writeViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    var currentPhotoIndex by remember(selectedDate, diaryState.allPhotosForDate) { mutableStateOf(0) }
+    var currentPhotoIndex by rememberSaveable(selectedDate) { mutableStateOf(0) }
 
     val lastDiaryItem = diaryState.uiItems.lastOrNull()
     val coverPhotoUri = when (writeState.uiMode) {
@@ -88,6 +88,7 @@ fun DiaryRoot(
                 writeState = writeState,
                 coverPhotoUri = coverPhotoUri,
                 viewModePhotoUris = viewModePhotoUris,
+                currentPhotoIndex = currentPhotoIndex,
                 onBack = {
                     val selectedUri = if (writeState.uiMode == WriteUiMode.VIEW) {
                         viewModePhotoUris.getOrNull(currentPhotoIndex)

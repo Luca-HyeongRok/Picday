@@ -3,8 +3,13 @@ package com.picday.diary.presentation.write.content
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +27,7 @@ fun ColumnScope.WriteContent(
     uiMode: WriteUiMode,
     coverPhotoUri: String?,
     viewModePhotoUris: List<String> = emptyList(),
+    currentPhotoIndex: Int = 0,
     items: List<DiaryUiItem>,
     title: String,
     content: String,
@@ -39,6 +45,7 @@ fun ColumnScope.WriteContent(
         WriteViewContent(
             coverPhotoUri = coverPhotoUri,
             viewModePhotoUris = viewModePhotoUris,
+            currentPhotoIndex = currentPhotoIndex,
             items = items,
             onAddClick = onAddClick,
             onEditClick = { diary -> onEditClick(diary.id) },
@@ -59,10 +66,12 @@ fun ColumnScope.WriteContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ColumnScope.WriteViewContent(
     coverPhotoUri: String?,
     viewModePhotoUris: List<String> = emptyList(),
+    currentPhotoIndex: Int = 0,
     items: List<DiaryUiItem>,
     onAddClick: () -> Unit,
     onEditClick: (DiaryUiItem) -> Unit,
@@ -71,13 +80,35 @@ fun ColumnScope.WriteViewContent(
     Spacer(modifier = Modifier.height(16.dp))
 
     // 1. Highlighted Cover Area
-    if (viewModePhotoUris.size > 1) {
-        // Multi-photo pager logic could be here, but for now we follow the "redesign tone"
-        // which emphasizes the square cover photo or a clean highlight.
-        WriteCoverPhoto(
-             coverPhotoUri = coverPhotoUri ?: viewModePhotoUris.firstOrNull(),
-             onClick = {}
+    if (viewModePhotoUris.isNotEmpty()) {
+        val pageCount = viewModePhotoUris.size
+        val safeInitialPage = currentPhotoIndex.coerceIn(0, pageCount - 1)
+        val pagerState = rememberPagerState(
+            initialPage = safeInitialPage,
+            pageCount = { pageCount }
         )
+
+        LaunchedEffect(pageCount, safeInitialPage) {
+            if (pagerState.currentPage != safeInitialPage) {
+                pagerState.scrollToPage(safeInitialPage)
+            }
+        }
+
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.currentPage }.collect { page ->
+                onPageSelected(page)
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            WriteCoverPhoto(
+                coverPhotoUri = viewModePhotoUris[page],
+                onClick = {}
+            )
+        }
     } else {
         WriteCoverPhoto(
             coverPhotoUri = coverPhotoUri,
