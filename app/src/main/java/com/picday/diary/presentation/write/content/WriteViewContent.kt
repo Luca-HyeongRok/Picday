@@ -168,6 +168,7 @@ fun ColumnScope.WriteViewContent(
         Spacer(modifier = Modifier.width(8.dp))
         Text("기록 추가하기", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
     }
-    
+
+    Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
     Spacer(modifier = Modifier.height(16.dp))
 }

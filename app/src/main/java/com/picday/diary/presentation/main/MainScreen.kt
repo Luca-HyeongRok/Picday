@@ -100,6 +100,7 @@ fun MainScreen() {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 24.dp)
                         .padding(bottom = 32.dp),
                     contentAlignment = Alignment.BottomCenter

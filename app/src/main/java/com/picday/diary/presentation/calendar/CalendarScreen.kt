@@ -44,7 +44,6 @@ import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
-import kotlin.collections.get
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,7 +173,11 @@ fun CalendarScreen(
 
         // Background Picker Trigger
         Surface(
-            modifier = Modifier.align(Alignment.TopEnd).padding(24.dp).size(44.dp),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(24.dp)
+                .size(44.dp),
             shape = CircleShape,
             color = Color.Black.copy(alpha = 0.2f),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
