@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -276,23 +277,27 @@ private fun BottomNavItem(
     val interactionSource = remember { MutableInteractionSource() }
     
     // Icon Logic for styling
-    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+    val iconSize = if (isSelected) 28.dp else 24.dp
 
     Column(
         modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(backgroundColor)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = screen.icon,
             contentDescription = null,
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(iconSize),
             tint = color
         )
         Spacer(modifier = Modifier.height(4.dp))

@@ -67,6 +67,14 @@ fun ColumnScope.WriteEditContent(
     val context = LocalContext.current
     fun onImagesPicked(uris: List<Uri>) {
         if (uris.isEmpty()) return
+        uris.forEach { uri ->
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (ignored: Exception) {}
+        }
         onPhotosAdded(uris.map { it.toString() })
     }
 
@@ -253,7 +261,7 @@ fun ColumnScope.WriteEditContent(
         TextField(
             value = title,
             onValueChange = onTitleChange,
-            placeholder = { Text("제목", color = Color.Gray.copy(alpha = 0.5f)) },
+            placeholder = { Text("제목", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = TextFieldDefaults.colors(
@@ -261,16 +269,20 @@ fun ColumnScope.WriteEditContent(
                 unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color(0xFF546089)
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
-            textStyle = TextStyle(fontSize = 16.sp),
+            textStyle = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface),
             singleLine = true
         )
 
         TextField(
             value = content,
             onValueChange = onContentChange,
-            placeholder = { Text("오늘의 기록", color = Color.Gray.copy(alpha = 0.5f)) },
+            placeholder = { Text("오늘의 기록", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             modifier = Modifier.fillMaxWidth().weight(1f),
             shape = RoundedCornerShape(20.dp),
             colors = TextFieldDefaults.colors(
@@ -278,9 +290,13 @@ fun ColumnScope.WriteEditContent(
                 unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color(0xFF546089)
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
-            textStyle = TextStyle(fontSize = 16.sp)
+            textStyle = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         )
     }
 
