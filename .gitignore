@@ -25,6 +25,7 @@ local.properties
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/markdown.xml
+/.idea/appInsightsSettings.xml
 
 # OS / Editor
 .DS_Store

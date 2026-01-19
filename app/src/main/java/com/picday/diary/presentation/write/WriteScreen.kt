@@ -9,20 +9,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import com.picday.diary.presentation.component.WriteTopBar
 import com.picday.diary.presentation.diary.DiaryUiItem
 import com.picday.diary.presentation.write.content.WriteContent
 import com.picday.diary.presentation.write.state.WriteState
 import com.picday.diary.presentation.write.state.WriteUiMode
+import com.picday.diary.presentation.write.photo.WritePhotoState
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +37,7 @@ fun WriteScreen(
     writeState: WriteState,
     coverPhotoUri: String?,
     viewModePhotoUris: List<String> = emptyList(),
+    currentPhotoIndex: Int = 0,
     onBack: () -> Unit,
     onSave: () -> Unit,
     onAddClick: () -> Unit,
@@ -47,6 +52,76 @@ fun WriteScreen(
 ) {
     val isEditMode = writeState.uiMode != WriteUiMode.VIEW
     val isEditingExistingDiary = writeState.editingDiaryId != null
+
+    var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
+
+    var baselineKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var baselineTitle by rememberSaveable { mutableStateOf("") }
+    var baselineContent by rememberSaveable { mutableStateOf("") }
+    var baselinePhotoUris by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+
+    val currentKey = "${writeState.uiMode}:${writeState.editingDiaryId ?: "new"}"
+    val currentPhotoUris = remember(writeState.photoItems) {
+        writeState.photoItems
+            .filter { it.state != WritePhotoState.DELETE }
+            .map { it.uri }
+    }
+    val isDirty = isEditMode && (
+        writeState.title != baselineTitle ||
+            writeState.content != baselineContent ||
+            currentPhotoUris != baselinePhotoUris
+        )
+
+    LaunchedEffect(writeState.uiMode) {
+        if (writeState.uiMode == WriteUiMode.VIEW) {
+            baselineKey = null
+            baselineTitle = ""
+            baselineContent = ""
+            baselinePhotoUris = emptyList()
+            showUnsavedDialog = false
+        }
+    }
+
+    LaunchedEffect(currentKey, writeState.uiMode, writeState.title, writeState.content, writeState.photoItems) {
+        if (writeState.uiMode != WriteUiMode.VIEW && baselineKey != currentKey) {
+            baselineKey = currentKey
+            baselineTitle = writeState.title
+            baselineContent = writeState.content
+            baselinePhotoUris = currentPhotoUris
+        }
+    }
+
+    fun handleBack() {
+        if (isDirty) {
+            showUnsavedDialog = true
+        } else {
+            onBack()
+        }
+    }
+
+    BackHandler {
+        handleBack()
+    }
+
+    if (showUnsavedDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedDialog = false },
+            text = { Text("저장하지 않고 나가시겠어요?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUnsavedDialog = false
+                    onBack()
+                }) {
+                    Text("나가기")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnsavedDialog = false }) {
+                    Text("계속 작성")
+                }
+            }
+        )
+    }
 
     // 삭제 확인 다이얼로그 표시 여부
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -86,7 +161,7 @@ fun WriteScreen(
         topBar = {
             WriteTopBar(
                 date = selectedDate,
-                onBack = onBack,
+                onBack = { handleBack() },
                 onSave = onSave,
                 canSave = isEditMode && writeState.content.isNotBlank(),
                 onDelete = if (isEditingExistingDiary) {
@@ -109,6 +184,7 @@ fun WriteScreen(
                 uiMode = writeState.uiMode,
                 coverPhotoUri = coverPhotoUri,
                 viewModePhotoUris = viewModePhotoUris,
+                currentPhotoIndex = currentPhotoIndex,
                 items = items,
                 title = writeState.title,
                 content = writeState.content,

@@ -4,9 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -100,6 +100,7 @@ fun MainScreen() {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 24.dp)
                         .padding(bottom = 32.dp),
                     contentAlignment = Alignment.BottomCenter
@@ -275,17 +276,23 @@ private fun BottomNavItem(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val isDarkTheme = isSystemInDarkTheme()
     
     // Icon Logic for styling
-    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val color = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        if (isDarkTheme) {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        }
+    }
     val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
-    val iconSize = if (isSelected) 28.dp else 24.dp
+    val iconSize = 24.dp
 
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(backgroundColor)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
