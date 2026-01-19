@@ -7,5 +7,6 @@ data class WriteState(
     val editingDiaryId: String? = null,
     val title: String = "",
     val content: String = "",
-    val photoItems: List<WritePhotoItem> = emptyList()
+    val photoItems: List<WritePhotoItem> = emptyList(),
+    val pendingReleaseUris: List<String> = emptyList()
 )

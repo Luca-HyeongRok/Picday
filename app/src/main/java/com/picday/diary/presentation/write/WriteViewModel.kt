@@ -84,30 +84,46 @@ class WriteViewModel @Inject constructor(
 
     fun onPhotoRemoved(photoId: String) {
         _uiState.update { current ->
+            val removedItem = current.photoItems.firstOrNull { it.id == photoId }
             val updated = current.photoItems.map { item ->
                 if (item.id == photoId) item.copy(state = WritePhotoState.DELETE) else item
             }
-            current.copy(photoItems = updated)
+            val pendingRelease = if (removedItem != null && removedItem.uri.startsWith("content://")) {
+                if (removedItem.uri in current.pendingReleaseUris) current.pendingReleaseUris
+                else current.pendingReleaseUris + removedItem.uri
+            } else {
+                current.pendingReleaseUris
+            }
+            current.copy(photoItems = updated, pendingReleaseUris = pendingRelease)
         }
     }
 
-    fun onSave(date: LocalDate) {
+    fun onSave(date: LocalDate, onReleasePersistableUris: (List<String>) -> Unit) {
         val state = _uiState.value
         val normalizedTitle = state.title.trim().ifBlank { null }
         val retainedUris = state.photoItems
             .filter { it.state != WritePhotoState.DELETE }
             .map { it.uri }
+        val releaseUris = state.pendingReleaseUris
+            .filter { it.startsWith("content://") }
+            .filterNot { it in retainedUris }
 
         viewModelScope.launch(Dispatchers.IO) {
             when (state.uiMode) {
                 WriteUiMode.ADD -> {
                     repository.addDiaryForDate(date, normalizedTitle, state.content, retainedUris)
+                    if (releaseUris.isNotEmpty()) {
+                        onReleasePersistableUris(releaseUris)
+                    }
                     resetForView()
                 }
                 WriteUiMode.EDIT -> {
                     val targetId = state.editingDiaryId ?: return@launch
                     repository.updateDiary(targetId, normalizedTitle, state.content)
                     repository.replacePhotos(targetId, retainedUris)
+                    if (releaseUris.isNotEmpty()) {
+                        onReleasePersistableUris(releaseUris)
+                    }
                     resetForView()
                 }
                 WriteUiMode.VIEW -> Unit
@@ -135,7 +151,8 @@ class WriteViewModel @Inject constructor(
                 editingDiaryId = null,
                 title = "",
                 content = "",
-                photoItems = emptyList()
+                photoItems = emptyList(),
+                pendingReleaseUris = emptyList()
             )
         }
     }
@@ -147,7 +164,8 @@ class WriteViewModel @Inject constructor(
                 editingDiaryId = null,
                 title = "",
                 content = "",
-                photoItems = emptyList()
+                photoItems = emptyList(),
+                pendingReleaseUris = emptyList()
             )
         }
     }

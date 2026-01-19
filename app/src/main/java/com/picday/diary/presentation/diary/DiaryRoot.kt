@@ -9,6 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
 import com.picday.diary.presentation.navigation.WriteMode
 import com.picday.diary.presentation.write.WriteScreen
 import com.picday.diary.presentation.write.WriteViewModel
@@ -35,6 +38,7 @@ fun DiaryRoot(
 ) {
     val diaryViewModel: DiaryViewModel = hiltViewModel()
     val writeViewModel: WriteViewModel = hiltViewModel()
+    val context = LocalContext.current
     val diaryState by diaryViewModel.uiState.collectAsState()
     val writeState by writeViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -100,7 +104,18 @@ fun DiaryRoot(
                     }
                 },
                 onSave = {
-                    writeViewModel.onSave(selectedDate)
+                    writeViewModel.onSave(selectedDate) { uris ->
+                        uris.forEach { uri ->
+                            try {
+                                if (uri.startsWith("content://")) {
+                                    context.contentResolver.releasePersistableUriPermission(
+                                        Uri.parse(uri),
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                }
+                            } catch (ignored: Exception) {}
+                        }
+                    }
                     onSaveComplete()
                 },
                 onAddClick = { writeViewModel.onAddClicked() },
