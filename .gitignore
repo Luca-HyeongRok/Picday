@@ -1,6 +1,23 @@
+# Android / Gradle
 *.iml
 .gradle
-/local.properties
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Local config
+local.properties
+
+# Keystore (CRITICAL)
+*.keystore
+*.jks
+
+# Build outputs
+*.apk
+*.aab
+
+# Android Studio / IntelliJ
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -8,10 +25,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/markdown.xml
+
+# OS / Editor
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
 /.vscode/settings.json
