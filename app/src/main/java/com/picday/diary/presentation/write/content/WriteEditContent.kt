@@ -244,7 +244,17 @@ fun ColumnScope.WriteEditContent(
             items(visiblePhotoItems, key = { it.id }) { item ->
                 PhotoThumbnail(
                     uri = item.uri,
-                    onRemove = { onPhotoRemoved(item.id) },
+                    onRemove = {
+                        try {
+                            if (item.uri.startsWith("content://")) {
+                                context.contentResolver.releasePersistableUriPermission(
+                                    Uri.parse(item.uri),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
+                        } catch (ignored: Exception) {}
+                        onPhotoRemoved(item.id)
+                    },
                     onClick = { onPhotoClick(item.id) }
                 )
             }
