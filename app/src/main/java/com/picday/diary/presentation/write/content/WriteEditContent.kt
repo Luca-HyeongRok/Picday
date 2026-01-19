@@ -190,7 +190,7 @@ fun ColumnScope.WriteEditContent(
     // 1. Cover Photo Area
     WriteCoverPhoto(
         coverPhotoUri = coverPhotoUri,
-        onClick = { handleCameraClick() }
+        onClick = {}
     )
 
     Spacer(modifier = Modifier.height(24.dp))

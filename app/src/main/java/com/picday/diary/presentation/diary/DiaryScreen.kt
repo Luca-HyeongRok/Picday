@@ -69,7 +69,6 @@ fun DiaryScreen(
             items(uiState.uiItems) { item ->
                 DiaryItemCard(
                     item = item,
-                    onClick = { onEditClick(item.id) },
                     onEditClick = { onEditClick(item.id) },
                     showEditIcon = true
                 )
