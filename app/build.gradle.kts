@@ -17,13 +17,13 @@ val keystoreProps = Properties().apply {
 }
 
 android {
-    namespace = "com.example.myapplication.picday"
+    namespace = "com.picday.diary"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.myapplication.picday"
+        applicationId = "com.picday.diary"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
