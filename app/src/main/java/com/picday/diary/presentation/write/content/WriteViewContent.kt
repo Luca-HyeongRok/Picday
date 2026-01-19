@@ -3,7 +3,6 @@ package com.picday.diary.presentation.write.content
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
@@ -66,7 +65,6 @@ fun ColumnScope.WriteContent(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ColumnScope.WriteViewContent(
     coverPhotoUri: String?,
