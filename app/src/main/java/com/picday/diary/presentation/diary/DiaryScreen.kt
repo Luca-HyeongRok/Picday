@@ -4,6 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +27,9 @@ import java.util.Locale
 fun DiaryScreen(
     uiState: DiaryUiState,
     onWriteClick: (LocalDate, WriteMode) -> Unit = { _, _ -> },
-    onEditClick: (String) -> Unit = {}
+    onEditClick: (String) -> Unit = {},
+    onPreviousDate: () -> Unit = {},
+    onNextDate: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -35,16 +42,34 @@ fun DiaryScreen(
 
         // Header Section
         Column {
-            Text(
-                text = "${uiState.selectedDate.monthValue}월 ${uiState.selectedDate.dayOfMonth}일의 기록",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    letterSpacing = (-1).sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPreviousDate) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "이전 날짜"
+                    )
+                }
+                Text(
+                    text = "${uiState.selectedDate.monthValue}월 ${uiState.selectedDate.dayOfMonth}일의 기록",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                IconButton(onClick = onNextDate) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "다음 날짜"
+                    )
+                }
+            }
+
             val dayOfWeek = uiState.selectedDate.dayOfWeek.getDisplayName(
                 TextStyle.FULL,
                 Locale.KOREAN

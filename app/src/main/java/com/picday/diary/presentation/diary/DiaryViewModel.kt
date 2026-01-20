@@ -51,6 +51,11 @@ class DiaryViewModel @Inject constructor(
         updateUiForDate(date)
     }
 
+    fun moveDateBy(days: Long) {
+        val next = _uiState.value.selectedDate.plusDays(days)
+        updateUiForDate(next)
+    }
+
     fun hasAnyRecord(date: LocalDate): Boolean {
         return hasAnyRecordUseCase(date)
     }

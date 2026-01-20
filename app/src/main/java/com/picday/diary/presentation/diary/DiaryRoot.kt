@@ -78,7 +78,9 @@ fun DiaryRoot(
             DiaryScreen(
                 uiState = diaryState,
                 onWriteClick = onWriteClick,
-                onEditClick = onEditClick
+                onEditClick = onEditClick,
+                onPreviousDate = { diaryViewModel.moveDateBy(-1) },
+                onNextDate = { diaryViewModel.moveDateBy(1) }
             )
         }
         DiaryRootScreen.WRITE -> {
