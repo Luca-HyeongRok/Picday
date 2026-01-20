@@ -1,5 +1,29 @@
 # PicDay
 
+<h2>📸 App Screenshots</h2>
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/6e8537f9-02c7-4480-98ab-29907cfd46ad" width="200" alt="Calendar"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/4e1b55af-175b-49d2-8f49-4f5e165a56fe" width="200" alt="Diary"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/093c2779-7e35-451b-be16-1bc9daa79f74" width="200" alt="Detail"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/5afeca62-a828-421b-b978-ebf3dc63c383" width="200" alt="Write"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><b>Calendar</b></td>
+    <td align="center"><b>Diary</b></td>
+    <td align="center"><b>Detail</b></td>
+    <td align="center"><b>Write</b></td>
+  </tr>
+</table>
+
 로그인 없이 사용하는 개인용 캘린더 다이어리 앱입니다.  
 날짜별 기록을 추가/조회/수정하고 사진을 함께 저장할 수 있습니다.  
 **1차 출시용 기준으로 현재 구현된 기능과 구조를 정리했습니다.**
