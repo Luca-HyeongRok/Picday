@@ -170,4 +170,49 @@ class DiaryViewModelTest {
             assertEquals("uri1", map[dateWithDiary])
         }
     }
+
+    @Test
+    fun `moveDateBy(1) 호출 시 selectedDate가 +1일 증가`() = runTest {
+        val before = viewModel.uiState.value.selectedDate
+        viewModel.moveDateBy(1)
+
+        val expected = before.plusDays(1)
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.selectedDate != expected) {
+                state = awaitItem()
+            }
+            assertEquals(expected, state.selectedDate)
+        }
+    }
+
+    @Test
+    fun `moveDateBy(-1) 호출 시 selectedDate가 -1일 감소`() = runTest {
+        val before = viewModel.uiState.value.selectedDate
+        viewModel.moveDateBy(-1)
+
+        val expected = before.minusDays(1)
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.selectedDate != expected) {
+                state = awaitItem()
+            }
+            assertEquals(expected, state.selectedDate)
+        }
+    }
+
+    @Test
+    fun `해당 날짜에 다이어리가 없으면 uiItems는 emptyList다`() = runTest {
+        val target = LocalDate.of(2024, 7, 1)
+        viewModel.onDateSelected(target)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.selectedDate != target) {
+                state = awaitItem()
+            }
+            assertEquals(target, state.selectedDate)
+            assertTrue(state.uiItems.isEmpty())
+        }
+    }
 }
