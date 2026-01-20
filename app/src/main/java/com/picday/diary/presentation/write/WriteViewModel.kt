@@ -1,7 +1,12 @@
 package com.picday.diary.presentation.write
 
 import androidx.lifecycle.ViewModel
-import com.picday.diary.domain.repository.DiaryRepository
+import com.picday.diary.domain.usecase.diary.AddDiaryForDateUseCase
+import com.picday.diary.domain.usecase.diary.DeleteDiaryUseCase
+import com.picday.diary.domain.usecase.diary.GetDiaryByIdUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
+import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
 import com.picday.diary.presentation.write.photo.WritePhotoItem
 import com.picday.diary.presentation.write.photo.WritePhotoState
 import com.picday.diary.presentation.write.state.WriteState
@@ -20,7 +25,12 @@ import java.util.UUID
 
 @HiltViewModel
 class WriteViewModel @Inject constructor(
-    private val repository: DiaryRepository
+    private val addDiaryForDate: AddDiaryForDateUseCase,
+    private val updateDiary: UpdateDiaryUseCase,
+    private val replacePhotos: ReplacePhotosUseCase,
+    private val getDiaryById: GetDiaryByIdUseCase,
+    private val getPhotos: GetPhotosUseCase,
+    private val deleteDiary: DeleteDiaryUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WriteState())
     val uiState: StateFlow<WriteState> = _uiState.asStateFlow()
@@ -39,8 +49,8 @@ class WriteViewModel @Inject constructor(
 
     fun onEditClicked(diaryId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val diary = repository.getDiaryById(diaryId) ?: return@launch
-            val photos = repository.getPhotos(diaryId)
+            val diary = getDiaryById(diaryId) ?: return@launch
+            val photos = getPhotos(diaryId)
             _uiState.update {
                 it.copy(
                     uiMode = WriteUiMode.EDIT,
@@ -111,7 +121,7 @@ class WriteViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             when (state.uiMode) {
                 WriteUiMode.ADD -> {
-                    repository.addDiaryForDate(date, normalizedTitle, state.content, retainedUris)
+                    addDiaryForDate(date, normalizedTitle, state.content, retainedUris)
                     if (releaseUris.isNotEmpty()) {
                         onReleasePersistableUris(releaseUris)
                     }
@@ -119,8 +129,8 @@ class WriteViewModel @Inject constructor(
                 }
                 WriteUiMode.EDIT -> {
                     val targetId = state.editingDiaryId ?: return@launch
-                    repository.updateDiary(targetId, normalizedTitle, state.content)
-                    repository.replacePhotos(targetId, retainedUris)
+                    updateDiary(targetId, normalizedTitle, state.content)
+                    replacePhotos(targetId, retainedUris)
                     if (releaseUris.isNotEmpty()) {
                         onReleasePersistableUris(releaseUris)
                     }
@@ -133,7 +143,7 @@ class WriteViewModel @Inject constructor(
 
     fun onDelete(diaryId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.deleteDiary(diaryId)
+            deleteDiary(diaryId)
             resetForView()
         }
     }

@@ -2,8 +2,12 @@ package com.picday.diary.presentation.diary
 
 import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.deriveCoverPhotoUri
-import com.picday.diary.domain.repository.DiaryRepository
-import com.picday.diary.domain.repository.SettingsRepository
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateRangeUseCase
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
+import com.picday.diary.domain.usecase.settings.GetDateCoverPhotoUseCase
+import com.picday.diary.domain.usecase.settings.SetDateCoverPhotoUseCase
 import kotlinx.coroutines.flow.firstOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,12 +26,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import kotlin.collections.get
 
 @HiltViewModel
 class DiaryViewModel @Inject constructor(
-    private val repository: DiaryRepository,
-    private val settingsRepository: SettingsRepository
+    private val getDiariesByDate: GetDiariesByDateUseCase,
+    private val getDiariesByDateRange: GetDiariesByDateRangeUseCase,
+    private val getPhotos: GetPhotosUseCase,
+    private val hasAnyRecord: HasAnyRecordUseCase,
+    private val getDateCoverPhoto: GetDateCoverPhotoUseCase,
+    private val setDateCoverPhoto: SetDateCoverPhotoUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
@@ -45,7 +52,7 @@ class DiaryViewModel @Inject constructor(
     }
 
     fun hasAnyRecord(date: LocalDate): Boolean {
-        return repository.hasAnyRecord(date)
+        return hasAnyRecord(date)
     }
 
     fun preloadCoverPhotos(dates: List<LocalDate>) {
@@ -56,18 +63,18 @@ class DiaryViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             delay(100)
             
-            val allDiariesInRange = repository.getDiariesByDateRange(startDate, endDate)
+            val allDiariesInRange = getDiariesByDateRange(startDate, endDate)
             val diariesByDate = allDiariesInRange.groupBy { it.date }
             val coverMap = mutableMapOf<LocalDate, String?>()
             
             dates.forEach { date ->
-                val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
+                val savedCover = getDateCoverPhoto(date).firstOrNull()
                 if (savedCover != null) {
                     coverMap[date] = savedCover
                 } else {
                     val latestDiary = diariesByDate[date]?.maxByOrNull { it.createdAt }
                     if (latestDiary != null) {
-                        val photos = repository.getPhotos(latestDiary.id)
+                        val photos = getPhotos(latestDiary.id)
                         coverMap[date] = deriveCoverPhotoUri(photos)
                     } else {
                         coverMap[date] = null
@@ -86,7 +93,7 @@ class DiaryViewModel @Inject constructor(
     private fun updateUiForDate(date: LocalDate) {
         updateJob?.cancel()
         updateJob = viewModelScope.launch(Dispatchers.IO) {
-            val domainItems = repository.getByDate(date)
+            val domainItems = getDiariesByDate(date)
                 .sortedBy { it.createdAt }
 
             val uiItems = fetchUiItems(domainItems)
@@ -106,7 +113,7 @@ class DiaryViewModel @Inject constructor(
 
     private suspend fun fetchUiItems(items: List<Diary>): List<DiaryUiItem> {
         return items.map { diary ->
-            val photos = repository.getPhotos(diary.id)
+            val photos = getPhotos(diary.id)
             DiaryUiItem(
                 id = diary.id,
                 date = diary.date,
@@ -120,7 +127,7 @@ class DiaryViewModel @Inject constructor(
 
     private suspend fun computeSortedPhotos(date: LocalDate, uiItems: List<DiaryUiItem>): List<String> {
         val allPhotos = uiItems.flatMap { it.photoUris }.distinct()
-        val savedCover = settingsRepository.getDateCoverPhotoUri(date).firstOrNull()
+            val savedCover = getDateCoverPhoto(date).firstOrNull()
 
         return if (savedCover != null && allPhotos.contains(savedCover)) {
             listOf(savedCover) + (allPhotos - savedCover)
@@ -131,7 +138,7 @@ class DiaryViewModel @Inject constructor(
 
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
         withContext(Dispatchers.IO) {
-            settingsRepository.setDateCoverPhotoUri(date, uri)
+            setDateCoverPhoto(date, uri)
             _uiState.update { current ->
                 current.copy(coverPhotoByDate = current.coverPhotoByDate + (date to uri))
             }
