@@ -3,6 +3,8 @@ package com.picday.diary.fakes
 import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.DiaryPhoto
 import com.picday.diary.domain.repository.DiaryRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDate
 import java.util.UUID
 
@@ -48,8 +50,18 @@ class FakeDiaryRepository : DiaryRepository {
         return photos.filter { it.diaryId == diaryId }
     }
 
+    override suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto> {
+        return getPhotos(diaryId)
+    }
+
     override fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
         return diaries.filter { it.date in startDate..endDate }
+    }
+
+    override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>> {
+        return flow {
+            emit(getDiariesByDateRange(startDate, endDate))
+        }
     }
 
     override fun replacePhotos(diaryId: String, photoUris: List<String>) {

@@ -3,6 +3,8 @@ package com.picday.diary.data.diary.repository
 import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.DiaryPhoto
 import com.picday.diary.domain.repository.DiaryRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDate
 import kotlin.collections.iterator
 
@@ -12,8 +14,8 @@ class InMemoryDiaryRepository(
     private val diaryByDate: MutableMap<LocalDate, MutableList<Diary>> = mutableMapOf()
     private val photosByDiaryId: MutableMap<String, MutableList<DiaryPhoto>> = mutableMapOf()
 
-    override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): kotlinx.coroutines.flow.Flow<List<Diary>> {
-        return kotlinx.coroutines.flow.flow {
+    override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>> {
+        return flow {
             emit(getDiariesByDateRange(startDate, endDate))
         }
     }
