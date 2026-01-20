@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -52,137 +53,231 @@ fun ColumnScope.WriteEditContent(
 ) {
     val context = LocalContext.current
 
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // 1. Cover Photo Area
-    WriteCoverPhoto(
-        coverPhotoUri = coverPhotoUri,
-        onClick = {}
-    )
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // 2. Action Bar
-    Surface(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .shadow(2.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.05f)),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
+            .fillMaxSize()
+            .imePadding(),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(vertical = 24.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(
-                onClick = onCameraClick,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                shape = RoundedCornerShape(0.dp)
+        // 1. Cover Photo Area
+        item {
+            WriteCoverPhoto(
+                coverPhotoUri = coverPhotoUri,
+                onClick = {}
+            )
+        }
+
+        // 2. Action Bar
+        item {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .shadow(
+                        2.dp,
+                        RoundedCornerShape(16.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.05f)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(imageVector = Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color(0xFF333333))
-                    Text("카메라", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF333333)))
-                }
-            }
-            VerticalDivider(modifier = Modifier.height(24.dp), thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.3f))
-            TextButton(
-                onClick = onGalleryClick,
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                shape = RoundedCornerShape(0.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color(0xFF333333))
-                    Text("갤러리", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF333333)))
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onCameraClick,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        shape = RoundedCornerShape(0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF333333)
+                            )
+                            Text(
+                                "카메라",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF333333)
+                                )
+                            )
+                        }
+                    }
+                    VerticalDivider(
+                        modifier = Modifier.height(24.dp),
+                        thickness = 1.dp,
+                        color = Color.LightGray.copy(alpha = 0.3f)
+                    )
+                    TextButton(
+                        onClick = onGalleryClick,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        shape = RoundedCornerShape(0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF333333)
+                            )
+                            Text(
+                                "갤러리",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF333333)
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
 
-    // 3. Thumbnails
-    val visiblePhotoItems = photoItems.filter { it.state != WritePhotoState.DELETE }
-    if (visiblePhotoItems.isNotEmpty()) {
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(vertical = 12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(visiblePhotoItems, key = { it.id }) { item ->
-                PhotoThumbnail(
-                    uri = item.uri,
-                    onRemove = { onPhotoRemoved(item.id) },
-                    onClick = { onPhotoClick(item.id) }
+        // 3. Thumbnails
+        item {
+            val visiblePhotoItems = photoItems.filter { it.state != WritePhotoState.DELETE }
+            if (visiblePhotoItems.isNotEmpty()) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(visiblePhotoItems, key = { it.id }) { item ->
+                        PhotoThumbnail(
+                            uri = item.uri,
+                            onRemove = { onPhotoRemoved(item.id) },
+                            onClick = { onPhotoClick(item.id) }
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Input Fields
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TextField(
+                    value = title,
+                    onValueChange = onTitleChange,
+                    placeholder = {
+                        Text(
+                            "제목",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White.copy(alpha = 0.7f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.6f
+                        ),
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
+                    textStyle = TextStyle(
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    singleLine = true
+                )
+
+                TextField(
+                    value = content,
+                    onValueChange = onContentChange,
+                    placeholder = {
+                        Text(
+                            "오늘의 기록",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 200.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White.copy(alpha = 0.7f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.6f
+                        ),
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
+                    textStyle = TextStyle(
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             }
         }
-    } else {
-        Spacer(modifier = Modifier.height(16.dp))
-    }
 
-    // 4. Input Fields
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        TextField(
-            value = title,
-            onValueChange = onTitleChange,
-            placeholder = { Text("제목", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White.copy(alpha = 0.7f),
-                unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
-            textStyle = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface),
-            singleLine = true
-        )
-
-        TextField(
-            value = content,
-            onValueChange = onContentChange,
-            placeholder = { Text("오늘의 기록", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            shape = RoundedCornerShape(20.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White.copy(alpha = 0.7f),
-                unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
-            textStyle = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-        )
-    }
-
-    if (BuildConfig.DEBUG) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            OutlinedButton(
-                onClick = {
-                    val existingUris = photoItems.map { it.uri }.toSet()
-                    val sampleRes = listOf(R.drawable.sample_photo_1, R.drawable.sample_photo_2, R.drawable.sample_photo_3, R.drawable.sample_photo_4)
-                    val next = sampleRes.map { "android.resource://${context.packageName}/$it" }.firstOrNull { it !in existingUris }
-                    next?.let { onPhotosAdded(listOf(it)) }
-                },
-                shape = RoundedCornerShape(100),
-                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                modifier = Modifier.height(28.dp)
-            ) {
-                Text("샘플 사진 추가 (DEBUG)", style = TextStyle(fontSize = 9.sp, color = Color.LightGray))
+        if (BuildConfig.DEBUG) {
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                    val existingUris = photoItems
+                        .filter { it.state != WritePhotoState.DELETE }
+                        .map { it.uri }
+                        .toSet()
+                            val sampleRes = listOf(
+                                R.drawable.sample_photo_1,
+                                R.drawable.sample_photo_2,
+                                R.drawable.sample_photo_3,
+                                R.drawable.sample_photo_4
+                            )
+                            val next = sampleRes
+                                .map { "android.resource://${context.packageName}/$it" }
+                                .firstOrNull { it !in existingUris }
+                            next?.let { onPhotosAdded(listOf(it)) }
+                        },
+                        shape = RoundedCornerShape(100),
+                        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Text(
+                            "샘플 사진 추가 (DEBUG)",
+                            style = TextStyle(fontSize = 9.sp, color = Color.LightGray)
+                        )
+                    }
+                }
             }
         }
     }
