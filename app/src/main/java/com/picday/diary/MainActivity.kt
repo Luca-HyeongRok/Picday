@@ -56,10 +56,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@forEachIndexed
-                resolver.openOutputStream(uri)?.use { output ->
+                val wroteBytes = resolver.openOutputStream(uri)?.use { output ->
                     resources.openRawResource(resId).use { input ->
                         input.copyTo(output)
                     }
+                }
+                if (wroteBytes == null) {
+                    resolver.delete(uri, null, null)
+                    return@forEachIndexed
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     values.clear()

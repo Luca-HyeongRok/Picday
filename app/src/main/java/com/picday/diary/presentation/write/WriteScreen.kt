@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -140,6 +141,8 @@ fun WriteScreen(
                 createTempPictureUri()?.let { uri ->
                     tempPhotoUriString = uri.toString()
                     takePictureLauncher.launch(uri)
+                } ?: run {
+                    Toast.makeText(context, "임시 파일 생성에 실패했습니다.", Toast.LENGTH_SHORT).show()
                 }
             }
             context is ComponentActivity && ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.CAMERA) -> {
