@@ -3,6 +3,12 @@ package com.picday.diary.presentation.diary
 import app.cash.turbine.test
 import com.picday.diary.fakes.FakeDiaryRepository
 import com.picday.diary.fakes.FakeSettingsRepository
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateRangeUseCase
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
+import com.picday.diary.domain.usecase.settings.GetDateCoverPhotoUseCase
+import com.picday.diary.domain.usecase.settings.SetDateCoverPhotoUseCase
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -30,7 +36,14 @@ class DiaryViewModelTest {
         diaryRepository = FakeDiaryRepository()
         settingsRepository = FakeSettingsRepository()
         // ViewModel init 블록에서 updateUiForDate(now)가 호출됨
-        viewModel = DiaryViewModel(diaryRepository, settingsRepository)
+        viewModel = DiaryViewModel(
+            getDiariesByDate = GetDiariesByDateUseCase(diaryRepository),
+            getDiariesByDateRange = GetDiariesByDateRangeUseCase(diaryRepository),
+            getPhotos = GetPhotosUseCase(diaryRepository),
+            hasAnyRecord = HasAnyRecordUseCase(diaryRepository),
+            getDateCoverPhoto = GetDateCoverPhotoUseCase(settingsRepository),
+            setDateCoverPhoto = SetDateCoverPhotoUseCase(settingsRepository)
+        )
     }
 
     /**
