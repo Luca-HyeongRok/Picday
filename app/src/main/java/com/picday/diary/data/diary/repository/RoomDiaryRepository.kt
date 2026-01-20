@@ -13,6 +13,7 @@ import com.picday.diary.domain.repository.DiaryRepository
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.map
 
 class RoomDiaryRepository(
     private val database: PicDayDatabase,
@@ -21,6 +22,17 @@ class RoomDiaryRepository(
 ) : DiaryRepository {
     override fun getByDate(date: LocalDate): List<Diary> = runBlocking(Dispatchers.IO) {
         diaryDao.getByDate(date.toEpochDay()).map { it.toDomain() }
+    }
+
+    override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): kotlinx.coroutines.flow.Flow<List<Diary>> {
+        return diaryDao.getByDateRangeFlow(startDate.toEpochDay(), endDate.toEpochDay())
+            .map { entities ->
+                entities.map { it.toDomain() }
+            }
+    }
+
+    override suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto> {
+        return diaryPhotoDao.getByDiaryId(diaryId).map { it.toDomain() }
     }
 
     override fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> =

@@ -49,12 +49,10 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
-    diaryViewModel: DiaryViewModel = hiltViewModel(),
     onDateSelected: (LocalDate) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val backgroundUri by viewModel.backgroundUri.collectAsState()
-    val coverPhotoByDate by diaryViewModel.coverPhotoByDate.collectAsState()
 
     val context = LocalContext.current
     
@@ -74,10 +72,6 @@ fun CalendarScreen(
 
     var showBackgroundPicker by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
-    LaunchedEffect(uiState.calendarDays) {
-        diaryViewModel.preloadCoverPhotos(uiState.calendarDays.map { it.date })
-    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -157,7 +151,7 @@ fun CalendarScreen(
                     modifier = Modifier.wrapContentHeight()
                 ) {
                     items(uiState.calendarDays, key = { it.date.toString() }) { day ->
-                        val coverUri = remember(coverPhotoByDate, day.date) { coverPhotoByDate[day.date] }
+                        val coverUri = uiState.coverPhotos[day.date]
                         DayCell(
                             day = day,
                             coverPhotoUri = coverUri,

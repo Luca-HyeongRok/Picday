@@ -12,8 +12,13 @@ import java.time.YearMonth
 import androidx.lifecycle.viewModelScope
 import com.picday.diary.domain.usecase.settings.ObserveCalendarBackgroundUseCase
 import com.picday.diary.domain.usecase.settings.SetCalendarBackgroundUseCase
+import com.picday.diary.domain.usecase.calendar.ObserveMonthlyDiariesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,7 +26,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val observeCalendarBackground: ObserveCalendarBackgroundUseCase,
-    private val setCalendarBackground: SetCalendarBackgroundUseCase
+    private val setCalendarBackground: SetCalendarBackgroundUseCase,
+    private val observeMonthlyDiaries: ObserveMonthlyDiariesUseCase
 ) : ViewModel() {
 
     // 초기 상태는 ViewModel에서 명시적으로 생성
@@ -42,6 +48,22 @@ class CalendarViewModel @Inject constructor(
 
     init {
         loadCalendarDays()
+        observeMonthlyPhotos()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeMonthlyPhotos() {
+        viewModelScope.launch {
+            _uiState
+                .map { it.currentYearMonth }
+                .distinctUntilChanged()
+                .flatMapLatest { yearMonth ->
+                    observeMonthlyDiaries(yearMonth)
+                }
+                .collect { photosMap ->
+                    _uiState.update { it.copy(coverPhotos = photosMap) }
+                }
+        }
     }
 
     /**

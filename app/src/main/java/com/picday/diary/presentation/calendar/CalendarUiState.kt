@@ -7,6 +7,7 @@ data class CalendarUiState(
     val currentYearMonth: YearMonth,
     val selectedDate: LocalDate = LocalDate.now(),
     val calendarDays: List<CalendarDay> = emptyList(),
+    val coverPhotos: Map<LocalDate, String> = emptyMap(),
     val isLoading: Boolean = false
 )
 
