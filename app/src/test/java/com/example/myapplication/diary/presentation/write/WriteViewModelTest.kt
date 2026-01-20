@@ -219,4 +219,40 @@ class WriteViewModelTest {
 
         assertTrue(computeWriteIsDirty(state))
     }
+
+    @Test
+    fun `VIEW 모드에서는 isDirty가 항상 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.VIEW,
+            baselineKey = "VIEW:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "changed",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.NEW)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `baselineKey가 null이면 isDirty는 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = null,
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "changed",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.NEW)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
 }
