@@ -1,8 +1,10 @@
 package com.example.myapplication.diary.presentation.calendar
 
 import app.cash.turbine.test
+import com.picday.diary.domain.usecase.calendar.ObserveMonthlyDiariesUseCase
 import com.picday.diary.domain.usecase.settings.ObserveCalendarBackgroundUseCase
 import com.picday.diary.domain.usecase.settings.SetCalendarBackgroundUseCase
+import com.picday.diary.fakes.FakeDiaryRepository
 import com.picday.diary.fakes.FakeSettingsRepository
 import com.picday.diary.presentation.calendar.CalendarViewModel
 import com.picday.diary.util.MainDispatcherRule
@@ -21,14 +23,17 @@ class CalendarViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var settingsRepository: FakeSettingsRepository
+    private lateinit var diaryRepository: FakeDiaryRepository
     private lateinit var viewModel: CalendarViewModel
 
     @Before
     fun setUp() {
         settingsRepository = FakeSettingsRepository()
+        diaryRepository = FakeDiaryRepository()
         viewModel = CalendarViewModel(
             observeCalendarBackground = ObserveCalendarBackgroundUseCase(settingsRepository),
-            setCalendarBackground = SetCalendarBackgroundUseCase(settingsRepository)
+            setCalendarBackground = SetCalendarBackgroundUseCase(settingsRepository),
+            observeMonthlyDiaries = ObserveMonthlyDiariesUseCase(diaryRepository)
         )
     }
 
