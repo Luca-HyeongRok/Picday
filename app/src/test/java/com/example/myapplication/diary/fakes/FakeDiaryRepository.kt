@@ -4,13 +4,14 @@ import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.DiaryPhoto
 import com.picday.diary.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.LocalDate
 import java.util.UUID
 
 class FakeDiaryRepository : DiaryRepository {
     private val diaries = mutableListOf<Diary>()
     private val photos = mutableListOf<DiaryPhoto>()
+    private val diariesFlow = MutableStateFlow<List<Diary>>(emptyList())
 
     override fun getByDate(date: LocalDate): List<Diary> {
         return diaries.filter { it.date == date }
@@ -22,6 +23,7 @@ class FakeDiaryRepository : DiaryRepository {
 
     override fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         diaries.add(Diary(UUID.randomUUID().toString(), date, title, content, System.currentTimeMillis()))
+        notifyDiaryChanged()
     }
 
     override fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>) {
@@ -30,6 +32,7 @@ class FakeDiaryRepository : DiaryRepository {
         photoUris.forEach { uri ->
             photos.add(DiaryPhoto(UUID.randomUUID().toString(), diaryId, uri, System.currentTimeMillis()))
         }
+        notifyDiaryChanged()
     }
 
     override fun updateDiary(diaryId: String, title: String?, content: String): Boolean {
@@ -37,6 +40,7 @@ class FakeDiaryRepository : DiaryRepository {
         if (index != -1) {
             val old = diaries[index]
             diaries[index] = old.copy(title = title, content = content)
+            notifyDiaryChanged()
             return true
         }
         return false
@@ -59,9 +63,7 @@ class FakeDiaryRepository : DiaryRepository {
     }
 
     override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>> {
-        return flow {
-            emit(getDiariesByDateRange(startDate, endDate))
-        }
+        return diariesFlow
     }
 
     override fun replacePhotos(diaryId: String, photoUris: List<String>) {
@@ -69,10 +71,16 @@ class FakeDiaryRepository : DiaryRepository {
         photoUris.forEach { uri ->
             photos.add(DiaryPhoto(UUID.randomUUID().toString(), diaryId, uri, System.currentTimeMillis()))
         }
+        notifyDiaryChanged()
     }
 
     override fun deleteDiary(diaryId: String) {
         diaries.removeAll { it.id == diaryId }
         photos.removeAll { it.diaryId == diaryId }
+        notifyDiaryChanged()
+    }
+
+    private fun notifyDiaryChanged() {
+        diariesFlow.value = diaries.toList()
     }
 }
