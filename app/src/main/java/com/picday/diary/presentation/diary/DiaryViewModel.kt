@@ -32,7 +32,7 @@ class DiaryViewModel @Inject constructor(
     private val getDiariesByDate: GetDiariesByDateUseCase,
     private val getDiariesByDateRange: GetDiariesByDateRangeUseCase,
     private val getPhotos: GetPhotosUseCase,
-    private val hasAnyRecord: HasAnyRecordUseCase,
+    private val hasAnyRecordUseCase: HasAnyRecordUseCase,
     private val getDateCoverPhoto: GetDateCoverPhotoUseCase,
     private val setDateCoverPhoto: SetDateCoverPhotoUseCase
 ) : ViewModel() {
@@ -52,7 +52,7 @@ class DiaryViewModel @Inject constructor(
     }
 
     fun hasAnyRecord(date: LocalDate): Boolean {
-        return hasAnyRecord(date)
+        return hasAnyRecordUseCase(date)
     }
 
     fun preloadCoverPhotos(dates: List<LocalDate>) {

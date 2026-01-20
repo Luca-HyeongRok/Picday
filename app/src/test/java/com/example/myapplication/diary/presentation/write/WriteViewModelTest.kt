@@ -257,6 +257,99 @@ class WriteViewModelTest {
     }
 
     @Test
+    fun `ADD 저장 시 일기와 사진이 생성된다`() = runTest {
+        val date = LocalDate.now()
+        viewModel.onAddClicked()
+        viewModel.onTitleChanged("Title")
+        viewModel.onContentChanged("Content")
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+
+        var releasedUris: List<String>? = null
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.ADD) {
+                state = awaitItem()
+            }
+
+            viewModel.onSave(date) { releasedUris = it }
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        val diaries = repository.getByDate(date)
+        assertEquals(1, diaries.size)
+        val photos = repository.getPhotos(diaries[0].id)
+        assertEquals(2, photos.size)
+        assertNull(releasedUris)
+    }
+
+    @Test
+    fun `EDIT 저장 시 내용과 사진이 갱신되고 삭제된 content uri가 해제된다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Old", "Content", listOf("content://old", "content://keep"))
+        val diaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(diaryId)
+
+        var releasedUris: List<String>? = null
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+
+            val removeId = state.photoItems.first { it.uri == "content://old" }.id
+            viewModel.onPhotoRemoved(removeId)
+            viewModel.onPhotosAdded(listOf("content://new"))
+            viewModel.onContentChanged("Changed")
+
+            viewModel.onSave(date) { releasedUris = it }
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        assertEquals(listOf("content://old"), releasedUris)
+
+        val updatedDiary = repository.getDiaryById(diaryId)
+        assertEquals("Changed", updatedDiary?.content)
+
+        val updatedPhotoUris = repository.getPhotos(diaryId).map { it.uri }
+        assertTrue(updatedPhotoUris.contains("content://keep"))
+        assertTrue(updatedPhotoUris.contains("content://new"))
+        assertFalse(updatedPhotoUris.contains("content://old"))
+    }
+
+    @Test
+    fun `DELETE 호출 시 일기가 제거되고 VIEW로 복귀한다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Title", "Content")
+        val diaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(diaryId)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+
+            viewModel.onDelete(diaryId)
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        assertNull(repository.getDiaryById(diaryId))
+    }
+
+    @Test
     fun `ADD 전환 시 baseline이 설정되고 isDirty는 false에서 시작한다`() = runTest {
         viewModel.onAddClicked()
 
