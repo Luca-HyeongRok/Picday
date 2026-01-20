@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +81,9 @@ fun WriteScreen(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-        } catch (_: Exception) {}
+            } catch (_: SecurityException) {
+                Log.w("WriteScreen", "Persistable permission not supported for uri: $uri")
+            }
         }
         onPhotosAdded(uris.map { it.toString() })
     }
