@@ -215,4 +215,18 @@ class DiaryViewModelTest {
             assertTrue(state.uiItems.isEmpty())
         }
     }
+
+    @Test
+    fun `selectDate 호출 시 selectedDate가 전달된 날짜로 변경된다`() = runTest {
+        val target = LocalDate.of(2024, 8, 1)
+        viewModel.onDateSelected(target)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.selectedDate != target) {
+                state = awaitItem()
+            }
+            assertEquals(target, state.selectedDate)
+        }
+    }
 }
