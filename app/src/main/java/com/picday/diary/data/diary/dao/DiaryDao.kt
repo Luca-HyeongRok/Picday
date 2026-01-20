@@ -15,6 +15,9 @@ interface DiaryDao {
     @Query("SELECT * FROM diary WHERE dateEpochDay >= :start AND dateEpochDay <= :end ORDER BY dateEpochDay ASC, createdAt ASC")
     suspend fun getByDateRange(start: Long, end: Long): List<DiaryEntity>
 
+    @Query("SELECT * FROM diary WHERE dateEpochDay >= :start AND dateEpochDay <= :end ORDER BY dateEpochDay ASC, createdAt ASC")
+    fun getByDateRangeFlow(start: Long, end: Long): kotlinx.coroutines.flow.Flow<List<DiaryEntity>>
+
     @Query("SELECT * FROM diary WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): DiaryEntity?
 

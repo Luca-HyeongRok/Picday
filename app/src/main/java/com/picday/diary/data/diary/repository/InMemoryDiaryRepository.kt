@@ -12,6 +12,16 @@ class InMemoryDiaryRepository(
     private val diaryByDate: MutableMap<LocalDate, MutableList<Diary>> = mutableMapOf()
     private val photosByDiaryId: MutableMap<String, MutableList<DiaryPhoto>> = mutableMapOf()
 
+    override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): kotlinx.coroutines.flow.Flow<List<Diary>> {
+        return kotlinx.coroutines.flow.flow {
+            emit(getDiariesByDateRange(startDate, endDate))
+        }
+    }
+
+    override suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto> {
+        return getPhotos(diaryId)
+    }
+
     init {
         seedData.forEach { addDiaryInternal(it) }
     }

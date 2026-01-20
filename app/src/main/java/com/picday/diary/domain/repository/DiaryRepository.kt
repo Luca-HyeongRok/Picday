@@ -12,7 +12,9 @@ interface DiaryRepository {
     fun updateDiary(diaryId: String, title: String?, content: String): Boolean
     fun hasAnyRecord(date: LocalDate): Boolean
     fun getPhotos(diaryId: String): List<DiaryPhoto>
+    suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto>
     fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> // 범위 쿼리 추가
+    fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): kotlinx.coroutines.flow.Flow<List<Diary>>
     fun replacePhotos(diaryId: String, photoUris: List<String>)
     fun deleteDiary(diaryId: String)
 }
