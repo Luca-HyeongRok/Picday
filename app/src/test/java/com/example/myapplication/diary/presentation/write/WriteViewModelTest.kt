@@ -2,7 +2,15 @@ package com.picday.diary.presentation.write
 
 import app.cash.turbine.test
 import com.picday.diary.fakes.FakeDiaryRepository
+import com.picday.diary.domain.usecase.diary.AddDiaryForDateUseCase
+import com.picday.diary.domain.usecase.diary.DeleteDiaryUseCase
+import com.picday.diary.domain.usecase.diary.GetDiaryByIdUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
+import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
+import com.picday.diary.presentation.write.photo.WritePhotoItem
 import com.picday.diary.presentation.write.photo.WritePhotoState
+import com.picday.diary.presentation.write.state.WriteState
 import com.picday.diary.presentation.write.state.WriteUiMode
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +36,14 @@ class WriteViewModelTest {
     @Before
     fun setUp() {
         repository = FakeDiaryRepository()
-        viewModel = WriteViewModel(repository)
+        viewModel = WriteViewModel(
+            addDiaryForDate = AddDiaryForDateUseCase(repository),
+            updateDiary = UpdateDiaryUseCase(repository),
+            replacePhotos = ReplacePhotosUseCase(repository),
+            getDiaryById = GetDiaryByIdUseCase(repository),
+            getPhotos = GetPhotosUseCase(repository),
+            deleteDiary = DeleteDiaryUseCase(repository)
+        )
     }
 
     /**
@@ -149,5 +164,59 @@ class WriteViewModelTest {
             assertTrue(uris.contains("old_uri"))
             assertTrue(uris.contains("new_uri"))
         }
+    }
+
+    @Test
+    fun `baseline과 동일한 상태면 isDirty는 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "title",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.KEEP)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `title이 변경되면 isDirty는 true다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.KEEP)
+            )
+        )
+
+        assertTrue(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `사진이 삭제되면 isDirty는 true다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "title",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.DELETE)
+            )
+        )
+
+        assertTrue(computeWriteIsDirty(state))
     }
 }

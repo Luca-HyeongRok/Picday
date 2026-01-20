@@ -38,21 +38,8 @@ class WriteViewModel @Inject constructor(
     private fun updateState(transform: (WriteState) -> WriteState) {
         _uiState.update { current ->
             val next = transform(current)
-            next.copy(isDirty = computeIsDirty(next))
+            next.copy(isDirty = computeWriteIsDirty(next))
         }
-    }
-
-    private fun computeIsDirty(state: WriteState): Boolean {
-        if (state.uiMode == WriteUiMode.VIEW) return false
-        if (state.baselineKey == null) return false
-
-        val currentPhotoUris = state.photoItems
-            .filter { it.state != WritePhotoState.DELETE }
-            .map { it.uri }
-
-        return state.title != state.baselineTitle ||
-            state.content != state.baselineContent ||
-            currentPhotoUris != state.baselinePhotoUris
     }
 
     private fun buildBaselineKey(state: WriteState): String {
