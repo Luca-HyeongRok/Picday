@@ -252,7 +252,10 @@ fun ColumnScope.WriteEditContent(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            val existingUris = photoItems.map { it.uri }.toSet()
+                    val existingUris = photoItems
+                        .filter { it.state != WritePhotoState.DELETE }
+                        .map { it.uri }
+                        .toSet()
                             val sampleRes = listOf(
                                 R.drawable.sample_photo_1,
                                 R.drawable.sample_photo_2,
