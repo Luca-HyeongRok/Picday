@@ -126,6 +126,8 @@ fun WriteScreen(
             createTempPictureUri()?.let { uri ->
                 tempPhotoUriString = uri.toString()
                 takePictureLauncher.launch(uri)
+            } ?: run {
+                Toast.makeText(context, "임시 파일 생성에 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
         } else {
             val activity = context as? ComponentActivity
