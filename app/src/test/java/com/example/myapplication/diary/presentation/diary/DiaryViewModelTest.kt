@@ -3,6 +3,12 @@ package com.picday.diary.presentation.diary
 import app.cash.turbine.test
 import com.picday.diary.fakes.FakeDiaryRepository
 import com.picday.diary.fakes.FakeSettingsRepository
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateRangeUseCase
+import com.picday.diary.domain.usecase.diary.GetDiariesByDateUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
+import com.picday.diary.domain.usecase.settings.GetDateCoverPhotoUseCase
+import com.picday.diary.domain.usecase.settings.SetDateCoverPhotoUseCase
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -30,7 +36,14 @@ class DiaryViewModelTest {
         diaryRepository = FakeDiaryRepository()
         settingsRepository = FakeSettingsRepository()
         // ViewModel init 블록에서 updateUiForDate(now)가 호출됨
-        viewModel = DiaryViewModel(diaryRepository, settingsRepository)
+        viewModel = DiaryViewModel(
+            getDiariesByDate = GetDiariesByDateUseCase(diaryRepository),
+            getDiariesByDateRange = GetDiariesByDateRangeUseCase(diaryRepository),
+            getPhotos = GetPhotosUseCase(diaryRepository),
+            hasAnyRecordUseCase = HasAnyRecordUseCase(diaryRepository),
+            getDateCoverPhoto = GetDateCoverPhotoUseCase(settingsRepository),
+            setDateCoverPhoto = SetDateCoverPhotoUseCase(settingsRepository)
+        )
     }
 
     /**
@@ -71,7 +84,10 @@ class DiaryViewModelTest {
 
         // Then: 집계된 전체 사진은 [uri1, uri2, uri3] 3개여야 함
         viewModel.uiState.test {
-            val state = awaitItem()
+            var state = awaitItem()
+            while (state.selectedDate != date) {
+                state = awaitItem()
+            }
             assertEquals(3, state.allPhotosForDate.size)
             assertTrue(state.allPhotosForDate.containsAll(listOf("uri1", "uri2", "uri3")))
         }
@@ -113,6 +129,45 @@ class DiaryViewModelTest {
             assertEquals(emptyDate, state.selectedDate)
             assertTrue(state.uiItems.isEmpty())
             assertTrue(state.allPhotosForDate.isEmpty())
+        }
+    }
+
+    @Test
+    fun `hasAnyRecord는 기록 존재 여부를 반환해야 한다`() {
+        val dateWithRecord = LocalDate.of(2024, 2, 1)
+        val emptyDate = LocalDate.of(2024, 2, 2)
+        diaryRepository.addDiaryForDate(dateWithRecord, "Title", "Content")
+
+        assertTrue(viewModel.hasAnyRecord(dateWithRecord))
+        assertFalse(viewModel.hasAnyRecord(emptyDate))
+    }
+
+    @Test
+    fun `대표 사진 저장 시 coverPhotoByDate가 갱신되어야 한다`() = runTest {
+        val date = LocalDate.of(2024, 3, 1)
+        viewModel.saveDateCoverPhoto(date, "uri_saved")
+
+        assertEquals("uri_saved", viewModel.coverPhotoByDate.value[date])
+    }
+
+    @Test
+    fun `preloadCoverPhotos는 저장된 대표 사진과 최신 사진을 우선 반영해야 한다`() = runTest {
+        val dateWithSavedCover = LocalDate.of(2024, 4, 1)
+        val dateWithDiary = LocalDate.of(2024, 4, 2)
+
+        settingsRepository.setDateCoverPhotoUri(dateWithSavedCover, "uri_saved")
+        diaryRepository.addDiaryForDate(dateWithDiary, "Title", "Content", listOf("uri1", "uri2"))
+
+        viewModel.preloadCoverPhotos(listOf(dateWithSavedCover, dateWithDiary))
+
+        viewModel.coverPhotoByDate.test {
+            var map = awaitItem()
+            while (!map.containsKey(dateWithSavedCover) || !map.containsKey(dateWithDiary)) {
+                map = awaitItem()
+            }
+
+            assertEquals("uri_saved", map[dateWithSavedCover])
+            assertEquals("uri1", map[dateWithDiary])
         }
     }
 }

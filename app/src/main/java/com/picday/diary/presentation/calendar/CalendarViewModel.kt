@@ -10,7 +10,8 @@ import java.time.YearMonth
 
 
 import androidx.lifecycle.viewModelScope
-import com.picday.diary.domain.repository.SettingsRepository
+import com.picday.diary.domain.usecase.settings.ObserveCalendarBackgroundUseCase
+import com.picday.diary.domain.usecase.settings.SetCalendarBackgroundUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -19,7 +20,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val observeCalendarBackground: ObserveCalendarBackgroundUseCase,
+    private val setCalendarBackground: SetCalendarBackgroundUseCase
 ) : ViewModel() {
 
     // 초기 상태는 ViewModel에서 명시적으로 생성
@@ -31,7 +33,7 @@ class CalendarViewModel @Inject constructor(
     )
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
-    val backgroundUri: StateFlow<String?> = settingsRepository.calendarBackgroundUri
+    val backgroundUri: StateFlow<String?> = observeCalendarBackground()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -149,7 +151,7 @@ class CalendarViewModel @Inject constructor(
 
     fun setBackgroundUri(uri: String?) {
         viewModelScope.launch {
-            settingsRepository.setCalendarBackgroundUri(uri)
+            setCalendarBackground(uri)
         }
     }
 }

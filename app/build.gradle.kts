@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.hilt.android)
     id("org.jetbrains.kotlin.kapt")
+    id("jacoco")
 }
 
 val keystoreProps = Properties().apply {
@@ -104,4 +105,42 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+
+    val kotlinClasses = fileTree("$buildDir/tmp/kotlin-classes/debug") {
+        include("com/picday/diary/domain/usecase/**")
+        include("com/picday/diary/presentation/**")
+        include("com/picday/diary/presentation/**/ViewModel*.class")
+        include("com/picday/diary/presentation/**/ViewModel\$*.class")
+    }
+
+    val javaClasses = fileTree("$buildDir/intermediates/javac/debug/classes") {
+        include("com/picday/diary/domain/usecase/**")
+        include("com/picday/diary/presentation/**")
+        include("com/picday/diary/presentation/**/ViewModel*.class")
+        include("com/picday/diary/presentation/**/ViewModel\$*.class")
+    }
+
+    classDirectories.setFrom(files(kotlinClasses, javaClasses))
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(
+        fileTree(buildDir) {
+            include(
+                "jacoco/testDebugUnitTest.exec",
+                "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
+            )
+        }
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }

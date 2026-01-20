@@ -2,7 +2,15 @@ package com.picday.diary.presentation.write
 
 import app.cash.turbine.test
 import com.picday.diary.fakes.FakeDiaryRepository
+import com.picday.diary.domain.usecase.diary.AddDiaryForDateUseCase
+import com.picday.diary.domain.usecase.diary.DeleteDiaryUseCase
+import com.picday.diary.domain.usecase.diary.GetDiaryByIdUseCase
+import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
+import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
+import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
+import com.picday.diary.presentation.write.photo.WritePhotoItem
 import com.picday.diary.presentation.write.photo.WritePhotoState
+import com.picday.diary.presentation.write.state.WriteState
 import com.picday.diary.presentation.write.state.WriteUiMode
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +36,14 @@ class WriteViewModelTest {
     @Before
     fun setUp() {
         repository = FakeDiaryRepository()
-        viewModel = WriteViewModel(repository)
+        viewModel = WriteViewModel(
+            addDiaryForDate = AddDiaryForDateUseCase(repository),
+            updateDiary = UpdateDiaryUseCase(repository),
+            replacePhotos = ReplacePhotosUseCase(repository),
+            getDiaryById = GetDiaryByIdUseCase(repository),
+            getPhotos = GetPhotosUseCase(repository),
+            deleteDiary = DeleteDiaryUseCase(repository)
+        )
     }
 
     /**
@@ -148,6 +163,228 @@ class WriteViewModelTest {
             val uris = finalState.photoItems.map { it.uri }
             assertTrue(uris.contains("old_uri"))
             assertTrue(uris.contains("new_uri"))
+        }
+    }
+
+    @Test
+    fun `baseline과 동일한 상태면 isDirty는 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "title",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.KEEP)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `title이 변경되면 isDirty는 true다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.KEEP)
+            )
+        )
+
+        assertTrue(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `사진이 삭제되면 isDirty는 true다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = "EDIT:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "title",
+            content = "content",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.DELETE)
+            )
+        )
+
+        assertTrue(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `VIEW 모드에서는 isDirty가 항상 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.VIEW,
+            baselineKey = "VIEW:1",
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "changed",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.NEW)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `baselineKey가 null이면 isDirty는 false다`() {
+        val state = WriteState(
+            uiMode = WriteUiMode.EDIT,
+            baselineKey = null,
+            baselineTitle = "title",
+            baselineContent = "content",
+            baselinePhotoUris = listOf("uri1"),
+            title = "changed",
+            content = "changed",
+            photoItems = listOf(
+                WritePhotoItem(id = "1", uri = "uri1", state = WritePhotoState.NEW)
+            )
+        )
+
+        assertFalse(computeWriteIsDirty(state))
+    }
+
+    @Test
+    fun `ADD 저장 시 일기와 사진이 생성된다`() = runTest {
+        val date = LocalDate.now()
+        viewModel.onAddClicked()
+        viewModel.onTitleChanged("Title")
+        viewModel.onContentChanged("Content")
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+
+        var releasedUris: List<String>? = null
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.ADD) {
+                state = awaitItem()
+            }
+
+            viewModel.onSave(date) { releasedUris = it }
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        val diaries = repository.getByDate(date)
+        assertEquals(1, diaries.size)
+        val photos = repository.getPhotos(diaries[0].id)
+        assertEquals(2, photos.size)
+        assertNull(releasedUris)
+    }
+
+    @Test
+    fun `EDIT 저장 시 내용과 사진이 갱신되고 삭제된 content uri가 해제된다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Old", "Content", listOf("content://old", "content://keep"))
+        val diaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(diaryId)
+
+        var releasedUris: List<String>? = null
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+
+            val removeId = state.photoItems.first { it.uri == "content://old" }.id
+            viewModel.onPhotoRemoved(removeId)
+            viewModel.onPhotosAdded(listOf("content://new"))
+            viewModel.onContentChanged("Changed")
+
+            viewModel.onSave(date) { releasedUris = it }
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        assertEquals(listOf("content://old"), releasedUris)
+
+        val updatedDiary = repository.getDiaryById(diaryId)
+        assertEquals("Changed", updatedDiary?.content)
+
+        val updatedPhotoUris = repository.getPhotos(diaryId).map { it.uri }
+        assertTrue(updatedPhotoUris.contains("content://keep"))
+        assertTrue(updatedPhotoUris.contains("content://new"))
+        assertFalse(updatedPhotoUris.contains("content://old"))
+    }
+
+    @Test
+    fun `DELETE 호출 시 일기가 제거되고 VIEW로 복귀한다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Title", "Content")
+        val diaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(diaryId)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+
+            viewModel.onDelete(diaryId)
+
+            do {
+                state = awaitItem()
+            } while (state.uiMode != WriteUiMode.VIEW)
+        }
+
+        assertNull(repository.getDiaryById(diaryId))
+    }
+
+    @Test
+    fun `ADD 전환 시 baseline이 설정되고 isDirty는 false에서 시작한다`() = runTest {
+        viewModel.onAddClicked()
+
+        val state = viewModel.uiState.value
+        assertEquals(WriteUiMode.ADD, state.uiMode)
+        assertNotNull(state.baselineKey)
+        assertFalse(state.isDirty)
+
+        viewModel.onTitleChanged("changed")
+
+        viewModel.uiState.test {
+            val updated = awaitItem()
+            assertTrue(updated.isDirty)
+        }
+    }
+
+    @Test
+    fun `EDIT 전환 시 baseline이 설정되고 변경 전에는 isDirty가 false다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Title", "Content", listOf("uri1"))
+        val existingDiaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(existingDiaryId)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+            assertNotNull(state.baselineKey)
+            assertFalse(state.isDirty)
+
+            viewModel.onContentChanged("changed")
+            val updated = awaitItem()
+            assertTrue(updated.isDirty)
         }
     }
 }

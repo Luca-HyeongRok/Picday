@@ -39,7 +39,9 @@ fun ColumnScope.WriteContent(
     onPhotosAdded: (List<String>) -> Unit,
     onPhotoRemoved: (String) -> Unit,
     onPageSelected: (Int) -> Unit = {},
-    onPhotoClick: (String) -> Unit = {}
+    onPhotoClick: (String) -> Unit = {},
+    onCameraClick: () -> Unit = {},
+    onGalleryClick: () -> Unit = {}
 ) {
     if (uiMode == WriteUiMode.VIEW) {
         WriteViewContent(
@@ -61,7 +63,9 @@ fun ColumnScope.WriteContent(
             onContentChange = onContentChange,
             onPhotosAdded = onPhotosAdded,
             onPhotoRemoved = onPhotoRemoved,
-            onPhotoClick = onPhotoClick
+            onPhotoClick = onPhotoClick,
+            onCameraClick = onCameraClick,
+            onGalleryClick = onGalleryClick
         )
     }
 }
