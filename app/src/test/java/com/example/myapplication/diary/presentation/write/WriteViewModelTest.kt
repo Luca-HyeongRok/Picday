@@ -255,4 +255,43 @@ class WriteViewModelTest {
 
         assertFalse(computeWriteIsDirty(state))
     }
+
+    @Test
+    fun `ADD 전환 시 baseline이 설정되고 isDirty는 false에서 시작한다`() = runTest {
+        viewModel.onAddClicked()
+
+        val state = viewModel.uiState.value
+        assertEquals(WriteUiMode.ADD, state.uiMode)
+        assertNotNull(state.baselineKey)
+        assertFalse(state.isDirty)
+
+        viewModel.onTitleChanged("changed")
+
+        viewModel.uiState.test {
+            val updated = awaitItem()
+            assertTrue(updated.isDirty)
+        }
+    }
+
+    @Test
+    fun `EDIT 전환 시 baseline이 설정되고 변경 전에는 isDirty가 false다`() = runTest {
+        val date = LocalDate.now()
+        repository.addDiaryForDate(date, "Title", "Content", listOf("uri1"))
+        val existingDiaryId = repository.getByDate(date)[0].id
+
+        viewModel.onEditClicked(existingDiaryId)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.EDIT) {
+                state = awaitItem()
+            }
+            assertNotNull(state.baselineKey)
+            assertFalse(state.isDirty)
+
+            viewModel.onContentChanged("changed")
+            val updated = awaitItem()
+            assertTrue(updated.isDirty)
+        }
+    }
 }
