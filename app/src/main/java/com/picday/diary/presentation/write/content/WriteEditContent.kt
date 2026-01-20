@@ -1,9 +1,5 @@
 package com.picday.diary.presentation.write.content
 
-import android.Manifest
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,22 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.core.content.FileProvider
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
-import android.provider.Settings
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.ActivityCompat
-import androidx.activity.ComponentActivity
-import android.content.pm.PackageManager
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.core.content.ContextCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,128 +46,11 @@ fun ColumnScope.WriteEditContent(
     onContentChange: (String) -> Unit,
     onPhotosAdded: (List<String>) -> Unit,
     onPhotoRemoved: (String) -> Unit,
-    onPhotoClick: (String) -> Unit = {}
+    onPhotoClick: (String) -> Unit = {},
+    onCameraClick: () -> Unit,
+    onGalleryClick: () -> Unit
 ) {
     val context = LocalContext.current
-    fun onImagesPicked(uris: List<Uri>) {
-        if (uris.isEmpty()) return
-        uris.forEach { uri ->
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (ignored: Exception) {}
-        }
-        onPhotosAdded(uris.map { it.toString() })
-    }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10)
-    ) { uris ->
-        onImagesPicked(uris)
-    }
-
-    // --- Camera Logic Start ---
-    var tempPhotoUriString by rememberSaveable { mutableStateOf<String?>(null) }
-    val tempPhotoUri = tempPhotoUriString?.let { Uri.parse(it) }
-    
-    var showRationaleDialog by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
-
-    fun createTempPictureUri(): Uri? {
-        return runCatching {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val storageDir = context.getExternalFilesDir("Pictures") ?: context.cacheDir
-            val file = File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
-            FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
-        }.getOrNull()
-    }
-
-    val takePictureLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            tempPhotoUri?.let { uri ->
-                onPhotosAdded(listOf(uri.toString()))
-            }
-        }
-    }
-
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            createTempPictureUri()?.let { uri ->
-                tempPhotoUriString = uri.toString()
-                takePictureLauncher.launch(uri)
-            }
-        } else {
-            val activity = context as? ComponentActivity
-            if (activity != null && !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)) {
-                showSettingsDialog = true
-            }
-        }
-    }
-
-    fun handleCameraClick() {
-        when {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
-                createTempPictureUri()?.let { uri ->
-                    tempPhotoUriString = uri.toString()
-                    takePictureLauncher.launch(uri)
-                }
-            }
-            context is ComponentActivity && ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.CAMERA) -> {
-                showRationaleDialog = true
-            }
-            else -> {
-                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
-        }
-    }
-
-    if (showRationaleDialog) {
-        AlertDialog(
-            onDismissRequest = { showRationaleDialog = false },
-            title = { Text("카메라 권한 필요") },
-            text = { Text("다이어리에 바로 찍은 사진을 올리려면 카메라 권한이 필요합니다.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showRationaleDialog = false
-                    requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-                }) { Text("허용") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRationaleDialog = false }) { Text("취소") }
-            }
-        )
-    }
-
-    if (showSettingsDialog) {
-        AlertDialog(
-            onDismissRequest = { showSettingsDialog = false },
-            title = { Text("권한 설정 안내") },
-            text = { Text("카메라 권한이 거부되어 있습니다. 설정 화면에서 권한을 허용해주세요.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSettingsDialog = false
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                    context.startActivity(intent)
-                }) { Text("설정으로 이동") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSettingsDialog = false }) { Text("취소") }
-            }
-        )
-    }
-    // --- Camera Logic End ---
 
     Spacer(modifier = Modifier.height(24.dp))
 
@@ -210,7 +77,7 @@ fun ColumnScope.WriteEditContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(
-                onClick = { handleCameraClick() },
+                onClick = onCameraClick,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 shape = RoundedCornerShape(0.dp)
             ) {
@@ -221,7 +88,7 @@ fun ColumnScope.WriteEditContent(
             }
             VerticalDivider(modifier = Modifier.height(24.dp), thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.3f))
             TextButton(
-                onClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onClick = onGalleryClick,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 shape = RoundedCornerShape(0.dp)
             ) {
