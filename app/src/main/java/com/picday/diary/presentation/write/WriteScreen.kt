@@ -39,7 +39,6 @@ import com.picday.diary.presentation.diary.DiaryUiItem
 import com.picday.diary.presentation.write.content.WriteContent
 import com.picday.diary.presentation.write.state.WriteState
 import com.picday.diary.presentation.write.state.WriteUiMode
-import com.picday.diary.presentation.write.photo.WritePhotoState
 import java.io.File
 import java.time.LocalDate
 import java.text.SimpleDateFormat
@@ -154,44 +153,14 @@ fun WriteScreen(
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
-    var baselineKey by rememberSaveable { mutableStateOf<String?>(null) }
-    var baselineTitle by rememberSaveable { mutableStateOf("") }
-    var baselineContent by rememberSaveable { mutableStateOf("") }
-    var baselinePhotoUris by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
-
-    val currentKey = "${writeState.uiMode}:${writeState.editingDiaryId ?: "new"}"
-    val currentPhotoUris = remember(writeState.photoItems) {
-        writeState.photoItems
-            .filter { it.state != WritePhotoState.DELETE }
-            .map { it.uri }
-    }
-    val isDirty = isEditMode && (
-        writeState.title != baselineTitle ||
-            writeState.content != baselineContent ||
-            currentPhotoUris != baselinePhotoUris
-        )
-
     LaunchedEffect(writeState.uiMode) {
         if (writeState.uiMode == WriteUiMode.VIEW) {
-            baselineKey = null
-            baselineTitle = ""
-            baselineContent = ""
-            baselinePhotoUris = emptyList()
             showUnsavedDialog = false
         }
     }
 
-    LaunchedEffect(currentKey, writeState.uiMode, writeState.title, writeState.content, writeState.photoItems) {
-        if (writeState.uiMode != WriteUiMode.VIEW && baselineKey != currentKey) {
-            baselineKey = currentKey
-            baselineTitle = writeState.title
-            baselineContent = writeState.content
-            baselinePhotoUris = currentPhotoUris
-        }
-    }
-
     fun handleBack() {
-        if (isDirty) {
+        if (writeState.isDirty) {
             showUnsavedDialog = true
         } else {
             onBack()

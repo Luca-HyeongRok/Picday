@@ -35,6 +35,42 @@ class WriteViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WriteState())
     val uiState: StateFlow<WriteState> = _uiState.asStateFlow()
 
+    private fun updateState(transform: (WriteState) -> WriteState) {
+        _uiState.update { current ->
+            val next = transform(current)
+            next.copy(isDirty = computeIsDirty(next))
+        }
+    }
+
+    private fun computeIsDirty(state: WriteState): Boolean {
+        if (state.uiMode == WriteUiMode.VIEW) return false
+        if (state.baselineKey == null) return false
+
+        val currentPhotoUris = state.photoItems
+            .filter { it.state != WritePhotoState.DELETE }
+            .map { it.uri }
+
+        return state.title != state.baselineTitle ||
+            state.content != state.baselineContent ||
+            currentPhotoUris != state.baselinePhotoUris
+    }
+
+    private fun buildBaselineKey(state: WriteState): String {
+        return "${state.uiMode}:${state.editingDiaryId ?: "new"}"
+    }
+
+    private fun setBaseline(state: WriteState): WriteState {
+        val baselinePhotoUris = state.photoItems
+            .filter { it.state != WritePhotoState.DELETE }
+            .map { it.uri }
+        return state.copy(
+            baselineKey = buildBaselineKey(state),
+            baselineTitle = state.title,
+            baselineContent = state.content,
+            baselinePhotoUris = baselinePhotoUris
+        )
+    }
+
     fun setMode(uiMode: WriteUiMode) {
         when (uiMode) {
             WriteUiMode.ADD -> resetForAdd()
@@ -51,8 +87,9 @@ class WriteViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val diary = getDiaryById(diaryId) ?: return@launch
             val photos = getPhotos(diaryId)
-            _uiState.update {
-                it.copy(
+            updateState {
+                setBaseline(
+                    it.copy(
                     uiMode = WriteUiMode.EDIT,
                     editingDiaryId = diaryId,
                     title = diary.title.orEmpty(),
@@ -64,22 +101,23 @@ class WriteViewModel @Inject constructor(
                             state = WritePhotoState.KEEP
                         )
                     }
+                    )
                 )
             }
         }
     }
 
     fun onTitleChanged(title: String) {
-        _uiState.update { it.copy(title = title) }
+        updateState { it.copy(title = title) }
     }
 
     fun onContentChanged(content: String) {
-        _uiState.update { it.copy(content = content) }
+        updateState { it.copy(content = content) }
     }
 
     fun onPhotosAdded(uris: List<String>) {
         if (uris.isEmpty()) return
-        _uiState.update { state ->
+        updateState { state ->
             val newItems = createUniqueNewItems(uris, state.photoItems)
             if (newItems.isEmpty()) state
             else state.copy(photoItems = newItems + state.photoItems)
@@ -87,13 +125,13 @@ class WriteViewModel @Inject constructor(
     }
 
     fun onPhotoClicked(photoId: String) {
-        _uiState.update { state ->
+        updateState { state ->
             state.copy(photoItems = reorderWithPriority(photoId, state.photoItems))
         }
     }
 
     fun onPhotoRemoved(photoId: String) {
-        _uiState.update { current ->
+        updateState { current ->
             val removedItem = current.photoItems.firstOrNull { it.id == photoId }
             val updated = current.photoItems.map { item ->
                 if (item.id == photoId) item.copy(state = WritePhotoState.DELETE) else item
@@ -155,14 +193,20 @@ class WriteViewModel @Inject constructor(
     }
 
     private fun resetForAdd() {
-        _uiState.update {
-            it.copy(
+        updateState {
+            setBaseline(
+                it.copy(
                 uiMode = WriteUiMode.ADD,
                 editingDiaryId = null,
                 title = "",
                 content = "",
                 photoItems = emptyList(),
-                pendingReleaseUris = emptyList()
+                pendingReleaseUris = emptyList(),
+                baselineKey = null,
+                baselineTitle = "",
+                baselineContent = "",
+                baselinePhotoUris = emptyList()
+                )
             )
         }
     }
@@ -175,7 +219,12 @@ class WriteViewModel @Inject constructor(
                 title = "",
                 content = "",
                 photoItems = emptyList(),
-                pendingReleaseUris = emptyList()
+                pendingReleaseUris = emptyList(),
+                baselineKey = null,
+                baselineTitle = "",
+                baselineContent = "",
+                baselinePhotoUris = emptyList(),
+                isDirty = false
             )
         }
     }
