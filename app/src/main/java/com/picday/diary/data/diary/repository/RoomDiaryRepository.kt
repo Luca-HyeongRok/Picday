@@ -62,12 +62,13 @@ class RoomDiaryRepository(
             content = content,
             createdAt = System.currentTimeMillis()
         )
-        val photos = photoUris.map { uri ->
+        val baseTime = System.currentTimeMillis()
+        val photos = photoUris.mapIndexed { index, uri ->
             DiaryPhotoEntity(
                 id = System.nanoTime().toString(),
                 diaryId = diary.id,
                 uri = uri,
-                createdAt = System.currentTimeMillis()
+                createdAt = baseTime + index
             )
         }
         runBlocking(Dispatchers.IO) {
@@ -95,12 +96,13 @@ class RoomDiaryRepository(
     }
 
     override fun replacePhotos(diaryId: String, photoUris: List<String>) {
-        val photos = photoUris.map { uri ->
+        val baseTime = System.currentTimeMillis()
+        val photos = photoUris.mapIndexed { index, uri ->
             DiaryPhotoEntity(
                 id = System.nanoTime().toString(),
                 diaryId = diaryId,
                 uri = uri,
-                createdAt = System.currentTimeMillis()
+                createdAt = baseTime + index
             )
         }
         runBlocking(Dispatchers.IO) {

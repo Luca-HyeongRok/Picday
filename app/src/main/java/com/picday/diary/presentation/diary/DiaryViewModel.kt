@@ -119,12 +119,14 @@ class DiaryViewModel @Inject constructor(
     private suspend fun fetchUiItems(items: List<Diary>): List<DiaryUiItem> {
         return items.map { diary ->
             val photos = getPhotos(diary.id)
+            // 편집 종료 시 저장된 대표사진을 1순위로 사용, 없으면 마지막 사진으로 fallback.
+            val savedCover = getDateCoverPhoto(diary.date).firstOrNull()
             DiaryUiItem(
                 id = diary.id,
                 date = diary.date,
                 title = diary.title,
                 previewContent = diary.previewContent,
-                coverPhotoUri = deriveCoverPhotoUri(photos),
+                coverPhotoUri = savedCover ?: deriveCoverPhotoUri(photos),
                 photoUris = photos.map { it.uri }
             )
         }
@@ -141,7 +143,7 @@ class DiaryViewModel @Inject constructor(
         }
     }
 
-    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
+    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String?) {
         withContext(Dispatchers.IO) {
             setDateCoverPhoto(date, uri)
             _uiState.update { current ->

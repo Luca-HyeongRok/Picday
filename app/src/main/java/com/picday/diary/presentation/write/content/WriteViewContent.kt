@@ -1,5 +1,6 @@
 package com.picday.diary.presentation.write.content
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -80,6 +82,9 @@ fun ColumnScope.WriteViewContent(
     onEditClick: (DiaryUiItem) -> Unit,
     onPageSelected: (Int) -> Unit = {}
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val addButtonContentColor = if (isDarkTheme) Color.White else MaterialTheme.colorScheme.onPrimary
+
     Spacer(modifier = Modifier.height(16.dp))
 
     // 1. Highlighted Cover Area
@@ -165,7 +170,7 @@ fun ColumnScope.WriteViewContent(
         shape = AppShapes.Button,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            contentColor = addButtonContentColor
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
     ) {

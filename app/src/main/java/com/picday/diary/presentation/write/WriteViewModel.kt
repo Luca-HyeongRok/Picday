@@ -179,6 +179,13 @@ class WriteViewModel @Inject constructor(
         }?.uri
     }
 
+    fun getRepresentativePhotoUriForExit(): String? {
+        return _uiState.value.photoItems
+            .filter { item -> item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW }
+            .map { it.uri }
+            .lastOrNull()
+    }
+
     private fun resetForAdd() {
         updateState {
             setBaseline(

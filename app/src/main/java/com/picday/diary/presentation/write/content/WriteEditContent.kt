@@ -3,6 +3,7 @@ package com.picday.diary.presentation.write.content
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -52,6 +53,16 @@ fun ColumnScope.WriteEditContent(
     onGalleryClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val isDarkTheme = isSystemInDarkTheme()
+    val darkTextColor = Color(0xFF111111)
+    val darkPlaceholderColor = Color(0xFF333333)
+    val textColor = if (isDarkTheme) darkTextColor else MaterialTheme.colorScheme.onSurface
+    val placeholderColor = if (isDarkTheme) {
+        darkPlaceholderColor
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    }
+    val cursorColor = if (isDarkTheme) darkTextColor else MaterialTheme.colorScheme.primary
 
     LazyColumn(
         modifier = Modifier
@@ -182,7 +193,7 @@ fun ColumnScope.WriteEditContent(
                     placeholder = {
                         Text(
                             "제목",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = placeholderColor
                         )
                     },
                     modifier = Modifier
@@ -194,17 +205,15 @@ fun ColumnScope.WriteEditContent(
                         unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = 0.6f
-                        ),
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedPlaceholderColor = placeholderColor,
+                        unfocusedPlaceholderColor = placeholderColor,
+                        cursorColor = cursorColor
                     ),
                     textStyle = TextStyle(
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = textColor
                     ),
                     singleLine = true
                 )
@@ -215,7 +224,7 @@ fun ColumnScope.WriteEditContent(
                     placeholder = {
                         Text(
                             "오늘의 기록",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = placeholderColor
                         )
                     },
                     modifier = Modifier
@@ -227,17 +236,15 @@ fun ColumnScope.WriteEditContent(
                         unfocusedContainerColor = Color.White.copy(alpha = 0.4f),
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = 0.6f
-                        ),
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedPlaceholderColor = placeholderColor,
+                        unfocusedPlaceholderColor = placeholderColor,
+                        cursorColor = cursorColor
                     ),
                     textStyle = TextStyle(
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = textColor
                     )
                 )
             }
