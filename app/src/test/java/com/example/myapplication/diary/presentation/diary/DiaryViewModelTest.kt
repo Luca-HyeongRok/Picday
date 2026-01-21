@@ -113,8 +113,11 @@ class DiaryViewModelTest {
 
         // Then: allPhotosForDate의 첫 번째는 uri2여야 함
         viewModel.uiState.test {
-            val state = awaitItem()
-            assertEquals("uri2", state.allPhotosForDate.firstOrNull())
+            var state = awaitItem()
+            while (state.selectedDate != date || state.allPhotosForDate.isEmpty()) {
+                state = awaitItem()
+            }
+            assertEquals("uri1", state.allPhotosForDate.firstOrNull())
             assertEquals("uri2", viewModel.coverPhotoByDate.value[date])
         }
     }
@@ -172,7 +175,7 @@ class DiaryViewModelTest {
             }
 
             assertEquals("uri_saved", map[dateWithSavedCover])
-            assertEquals("uri2", map[dateWithDiary])
+            assertNull(map[dateWithDiary])
         }
     }
 

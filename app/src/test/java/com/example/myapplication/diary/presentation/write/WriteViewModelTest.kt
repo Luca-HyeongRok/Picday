@@ -89,20 +89,20 @@ class WriteViewModelTest {
     }
 
     /**
-     * 새로 추가된 사진들이 리스트의 앞에 오게 되어 대표 사진(첫 번째)으로 선택되는지 확인
+     * 편집 종료 시 대표 사진은 마지막 사진으로 계산되는지 확인
      */
     @Test
-    fun `새로 추가된 사진이 대표 사진으로 설정되어야 한다`() = runTest {
+    fun `대표 사진은 마지막 사진으로 계산되어야 한다`() = runTest {
         // Given: uri1이 있는 상태
         viewModel.onPhotosAdded(listOf("uri1"))
 
         // When: uri2를 추가
         viewModel.onPhotosAdded(listOf("uri2"))
 
-        // Then: 리스트의 첫 번째(대표 사진)는 uri2여야 함
+        // Then: 마지막 사진이 대표 사진으로 계산되어야 함
         viewModel.uiState.test {
             val state = awaitItem()
-            assertEquals("uri2", viewModel.getCoverPhotoUri())
+            assertEquals("uri1", viewModel.getRepresentativePhotoUriForExit())
         }
     }
 
