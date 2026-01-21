@@ -141,7 +141,7 @@ class DiaryViewModel @Inject constructor(
         }
     }
 
-    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String) {
+    suspend fun saveDateCoverPhoto(date: LocalDate, uri: String?) {
         withContext(Dispatchers.IO) {
             setDateCoverPhoto(date, uri)
             _uiState.update { current ->

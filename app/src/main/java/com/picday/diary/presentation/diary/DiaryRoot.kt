@@ -92,21 +92,18 @@ fun DiaryRoot(
                 viewModePhotoUris = viewModePhotoUris,
                 currentPhotoIndex = currentPhotoIndex,
                 onBack = {
-                    val selectedUri = if (writeState.uiMode == WriteUiMode.VIEW) {
-                        viewModePhotoUris.getOrNull(currentPhotoIndex)
+                    val representativeUri = if (writeState.uiMode == WriteUiMode.VIEW) {
+                        viewModePhotoUris.lastOrNull()
                     } else {
-                        null
+                        writeViewModel.getRepresentativePhotoUriForExit()
                     }
-                    if (selectedUri != null) {
-                        coroutineScope.launch {
-                            diaryViewModel.saveDateCoverPhoto(selectedDate, selectedUri)
-                            onBack()
-                        }
-                    } else {
+                    coroutineScope.launch {
+                        diaryViewModel.saveDateCoverPhoto(selectedDate, representativeUri)
                         onBack()
                     }
                 },
                 onSave = {
+                    val representativeUri = writeViewModel.getRepresentativePhotoUriForExit()
                     writeViewModel.onSave(selectedDate) { uris ->
                         uris.forEach { uri ->
                             try {
@@ -118,6 +115,9 @@ fun DiaryRoot(
                                 }
                             } catch (ignored: Exception) {}
                         }
+                    }
+                    coroutineScope.launch {
+                        diaryViewModel.saveDateCoverPhoto(selectedDate, representativeUri)
                     }
                     onSaveComplete()
                 },
