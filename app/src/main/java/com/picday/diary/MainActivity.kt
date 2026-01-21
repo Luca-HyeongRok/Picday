@@ -13,6 +13,7 @@ import com.picday.diary.presentation.theme.PicDayTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.picday.diary.widget.CalendarWidgetProvider
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG) {
             seedSampleImagesIfNeeded()
         }
+        CalendarWidgetProvider.updateAll(this)
         setContent {
             PicDayTheme() {
                 MainScreen()
