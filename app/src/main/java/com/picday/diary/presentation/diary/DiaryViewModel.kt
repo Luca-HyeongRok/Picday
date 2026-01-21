@@ -79,13 +79,7 @@ class DiaryViewModel @Inject constructor(
                 if (savedCover != null) {
                     coverMap[date] = savedCover
                 } else {
-                    val latestDiary = diariesByDate[date]?.maxByOrNull { it.createdAt }
-                    if (latestDiary != null) {
-                        val photos = getPhotos(latestDiary.id)
-                        coverMap[date] = deriveCoverPhotoUri(photos)
-                    } else {
-                        coverMap[date] = null
-                    }
+                    coverMap[date] = null
                 }
             }
 
@@ -105,7 +99,8 @@ class DiaryViewModel @Inject constructor(
 
             val uiItems = fetchUiItems(domainItems)
             val sortedPhotos = computeSortedPhotos(date, uiItems)
-            val coverForDate = sortedPhotos.firstOrNull()
+            val savedCover = getDateCoverPhoto(date).firstOrNull()
+            val coverForDate = savedCover ?: sortedPhotos.firstOrNull()
 
             _uiState.update { current ->
                 current.copy(
@@ -133,14 +128,7 @@ class DiaryViewModel @Inject constructor(
     }
 
     private suspend fun computeSortedPhotos(date: LocalDate, uiItems: List<DiaryUiItem>): List<String> {
-        val allPhotos = uiItems.flatMap { it.photoUris }.distinct()
-            val savedCover = getDateCoverPhoto(date).firstOrNull()
-
-        return if (savedCover != null && allPhotos.contains(savedCover)) {
-            listOf(savedCover) + (allPhotos - savedCover)
-        } else {
-            allPhotos
-        }
+        return uiItems.flatMap { it.photoUris }.distinct()
     }
 
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String?) {

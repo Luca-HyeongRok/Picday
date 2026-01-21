@@ -88,6 +88,8 @@ class WriteViewModel @Inject constructor(
                             state = WritePhotoState.KEEP
                         )
                     }
+                    ,
+                    selectedCoverPhotoUri = photos.firstOrNull()?.uri
                     )
                 )
             }
@@ -106,14 +108,27 @@ class WriteViewModel @Inject constructor(
         if (uris.isEmpty()) return
         updateState { state ->
             val newItems = createUniqueNewItems(uris, state.photoItems)
-            if (newItems.isEmpty()) state
-            else state.copy(photoItems = newItems + state.photoItems)
+            if (newItems.isEmpty()) {
+                state
+            } else {
+                val nextState = state.copy(photoItems = newItems + state.photoItems)
+                // 대표사진이 설정되지 않았다면, 새로 추가된 첫 번째(리스트의 맨 앞) 사진을 대표사진으로 설정
+                if (nextState.selectedCoverPhotoUri == null) {
+                    nextState.copy(selectedCoverPhotoUri = newItems.first().uri)
+                } else {
+                    nextState
+                }
+            }
         }
     }
 
     fun onPhotoClicked(photoId: String) {
         updateState { state ->
-            state.copy(photoItems = reorderWithPriority(photoId, state.photoItems))
+            val clickedItem = state.photoItems.find { it.id == photoId }
+            state.copy(
+                photoItems = reorderWithPriority(photoId, state.photoItems),
+                selectedCoverPhotoUri = clickedItem?.uri
+            )
         }
     }
 
@@ -129,7 +144,19 @@ class WriteViewModel @Inject constructor(
             } else {
                 current.pendingReleaseUris
             }
-            current.copy(photoItems = updated, pendingReleaseUris = pendingRelease)
+            
+            val nextSelectedUri = if (current.selectedCoverPhotoUri == removedItem?.uri) {
+                // 선택된 대표사진이 삭제되면 null (or fallback to new first)
+                null
+            } else {
+                current.selectedCoverPhotoUri
+            }
+            
+            current.copy(
+                photoItems = updated, 
+                pendingReleaseUris = pendingRelease,
+                selectedCoverPhotoUri = nextSelectedUri
+            )
         }
     }
 
@@ -154,8 +181,8 @@ class WriteViewModel @Inject constructor(
                 }
                 WriteUiMode.EDIT -> {
                     val targetId = state.editingDiaryId ?: return@launch
-                    updateDiary(targetId, normalizedTitle, state.content)
                     replacePhotos(targetId, retainedUris)
+                    updateDiary(targetId, normalizedTitle, state.content)
                     if (releaseUris.isNotEmpty()) {
                         onReleasePersistableUris(releaseUris)
                     }
@@ -174,16 +201,27 @@ class WriteViewModel @Inject constructor(
     }
 
     fun getCoverPhotoUri(): String? {
-        return _uiState.value.photoItems.firstOrNull { item ->
+        val state = _uiState.value
+        if (state.selectedCoverPhotoUri != null) return state.selectedCoverPhotoUri
+        
+        return state.photoItems.firstOrNull { item ->
             item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW
         }?.uri
     }
 
     fun getRepresentativePhotoUriForExit(): String? {
-        return _uiState.value.photoItems
-            .filter { item -> item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW }
-            .map { it.uri }
-            .lastOrNull()
+        val state = _uiState.value
+        val validItems = state.photoItems.filter { 
+            item -> item.state == WritePhotoState.KEEP || item.state == WritePhotoState.NEW 
+        }
+        
+        // 1. 명시적으로 선택된 사진이 있고, 유효한 목록에 존재하면 그 사진 사용
+        if (state.selectedCoverPhotoUri != null && validItems.any { it.uri == state.selectedCoverPhotoUri }) {
+            return state.selectedCoverPhotoUri
+        }
+        
+        // 2. 아니면 첫 번째 사진 사용 (Fallback)
+        return validItems.firstOrNull()?.uri
     }
 
     private fun resetForAdd() {
@@ -199,7 +237,8 @@ class WriteViewModel @Inject constructor(
                 baselineKey = null,
                 baselineTitle = "",
                 baselineContent = "",
-                baselinePhotoUris = emptyList()
+                baselinePhotoUris = emptyList(),
+                selectedCoverPhotoUri = null
                 )
             )
         }
@@ -218,6 +257,7 @@ class WriteViewModel @Inject constructor(
                 baselineTitle = "",
                 baselineContent = "",
                 baselinePhotoUris = emptyList(),
+                selectedCoverPhotoUri = null,
                 isDirty = false
             )
         }
