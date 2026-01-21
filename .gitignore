@@ -30,3 +30,7 @@ local.properties
 # OS / Editor
 .DS_Store
 /.vscode/settings.json
+
+# Android Studio - device / run config
+/.idea/deploymentTargetSelector.xml
+/.idea/runConfigurations
