@@ -45,7 +45,7 @@ class ObserveMonthlyDiariesUseCase @Inject constructor(
             val diariesByDate = diaries.groupBy { it.date }
 
             val coverPhotoMap = mutableMapOf<LocalDate, String>()
-            coverPhotoMap.putAll(savedCovers)
+            coverPhotoMap.putAll(savedCovers.filterKeys { diariesByDate.containsKey(it) })
 
             diariesByDate.forEach { (date, dailyDiaries) ->
                 if (coverPhotoMap.containsKey(date)) return@forEach

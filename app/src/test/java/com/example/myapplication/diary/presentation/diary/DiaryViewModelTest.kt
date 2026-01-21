@@ -167,7 +167,7 @@ class DiaryViewModelTest {
             }
 
             assertEquals("uri_saved", map[dateWithSavedCover])
-            assertEquals("uri1", map[dateWithDiary])
+            assertEquals("uri2", map[dateWithDiary])
         }
     }
 
