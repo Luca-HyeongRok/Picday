@@ -33,7 +33,10 @@ class CalendarViewModelTest {
         viewModel = CalendarViewModel(
             observeCalendarBackground = ObserveCalendarBackgroundUseCase(settingsRepository),
             setCalendarBackground = SetCalendarBackgroundUseCase(settingsRepository),
-            observeMonthlyDiaries = ObserveMonthlyDiariesUseCase(diaryRepository)
+            observeMonthlyDiaries = ObserveMonthlyDiariesUseCase(
+                diaryRepository = diaryRepository,
+                settingsRepository = settingsRepository
+            )
         )
     }
 
