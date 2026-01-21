@@ -13,5 +13,6 @@ data class WriteState(
     val baselineTitle: String = "",
     val baselineContent: String = "",
     val baselinePhotoUris: List<String> = emptyList(),
+    val selectedCoverPhotoUri: String? = null,
     val isDirty: Boolean = false
 )

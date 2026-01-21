@@ -12,6 +12,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.remember
 import com.picday.diary.presentation.navigation.WriteMode
 import com.picday.diary.presentation.write.WriteScreen
 import com.picday.diary.presentation.write.WriteViewModel
@@ -43,17 +44,37 @@ fun DiaryRoot(
     val writeState by writeViewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    var currentPhotoIndex by rememberSaveable(selectedDate) { mutableStateOf(0) }
-
     val lastDiaryItem = diaryState.uiItems.lastOrNull()
-    val coverPhotoUri = when (writeState.uiMode) {
-        WriteUiMode.VIEW -> diaryState.allPhotosForDate.firstOrNull() ?: lastDiaryItem?.coverPhotoUri
-        else -> writeViewModel.getCoverPhotoUri()
-    }
+    val savedCoverUri = diaryState.coverPhotoByDate[selectedDate]
+    
+    // View 모드일 때 보여줄 사진 목록 (DataStore 순서 섞임 없이 시간순/원본순 유지)
     val viewModePhotoUris = when (writeState.uiMode) {
         WriteUiMode.VIEW -> diaryState.allPhotosForDate
         else -> emptyList()
     }
+    
+    // 초기 인덱스 계산: 저장된 커버 사진이 있다면 그 위치에서 시작
+    val initialPhotoIndex = remember(viewModePhotoUris, savedCoverUri) {
+         val index = viewModePhotoUris.indexOf(savedCoverUri)
+         if (index >= 0) index else 0
+    }
+
+    var currentPhotoIndex by rememberSaveable(selectedDate, viewModePhotoUris) { 
+        mutableStateOf(initialPhotoIndex) 
+    }
+
+    // Pager 등 외부 요인으로 초기값이 변경되어야 할 경우 동기화 (선택적)
+    LaunchedEffect(initialPhotoIndex) {
+        if (currentPhotoIndex == 0 && initialPhotoIndex > 0) {
+            currentPhotoIndex = initialPhotoIndex
+        }
+    }
+
+    val coverPhotoUri = when (writeState.uiMode) {
+        WriteUiMode.VIEW -> savedCoverUri ?: lastDiaryItem?.coverPhotoUri
+        else -> writeViewModel.getCoverPhotoUri()
+    }
+
 
     LaunchedEffect(selectedDate) {
         diaryViewModel.onDateSelected(selectedDate)
@@ -92,15 +113,16 @@ fun DiaryRoot(
                 viewModePhotoUris = viewModePhotoUris,
                 currentPhotoIndex = currentPhotoIndex,
                 onBack = {
-                    val representativeUri = if (writeState.uiMode == WriteUiMode.VIEW) {
-                        viewModePhotoUris.lastOrNull()
-                    } else {
-                        writeViewModel.getRepresentativePhotoUriForExit()
+                    if (writeState.uiMode == WriteUiMode.VIEW) {
+                        // 멈춘 상태에서 뒤로가기 시점에 현재 보고 있는 사진을 대표사진으로 저장
+                        val currentUri = viewModePhotoUris.getOrNull(currentPhotoIndex)
+                        if (currentUri != null) {
+                            coroutineScope.launch {
+                                diaryViewModel.saveDateCoverPhoto(selectedDate, currentUri)
+                            }
+                        }
                     }
-                    coroutineScope.launch {
-                        diaryViewModel.saveDateCoverPhoto(selectedDate, representativeUri)
-                        onBack()
-                    }
+                    onBack()
                 },
                 onSave = {
                     val representativeUri = writeViewModel.getRepresentativePhotoUriForExit()
@@ -117,6 +139,7 @@ fun DiaryRoot(
                         }
                     }
                     coroutineScope.launch {
+                        // 작성 완료 시점에도 캘린더 커버를 즉시 업데이트
                         diaryViewModel.saveDateCoverPhoto(selectedDate, representativeUri)
                     }
                     onSaveComplete()

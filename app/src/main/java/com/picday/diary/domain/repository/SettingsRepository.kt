@@ -9,4 +9,6 @@ interface SettingsRepository {
     
     fun getDateCoverPhotoUri(date: LocalDate): Flow<String?>
     suspend fun setDateCoverPhotoUri(date: LocalDate, uri: String?)
+
+    fun observeMonthlyCoverPhotos(yearMonth: java.time.YearMonth): Flow<Map<LocalDate, String>>
 }

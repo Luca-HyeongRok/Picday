@@ -60,4 +60,27 @@ class SettingsRepositoryImpl(
             }
         }
     }
+
+    override fun observeMonthlyCoverPhotos(yearMonth: java.time.YearMonth): Flow<Map<LocalDate, String>> {
+        val prefix = "cover_${yearMonth}-"
+        return context.dataStore.data
+            .catch { exception ->
+                if (exception is IOException) emit(emptyPreferences()) else throw exception
+            }
+            .map { preferences ->
+                preferences.asMap().keys
+                    .filter { it.name.startsWith(prefix) }
+                    .mapNotNull { key ->
+                        val dateString = key.name.removePrefix("cover_")
+                        try {
+                            val date = LocalDate.parse(dateString)
+                            val uri = preferences[key] as? String
+                            if (uri != null) date to uri else null
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    .toMap()
+            }
+    }
 }
