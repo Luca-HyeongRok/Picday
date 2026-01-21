@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import java.io.IOException
 import java.time.LocalDate
 
-private val Context.dataStore by preferencesDataStore(name = "settings")
+val Context.dataStore by preferencesDataStore(name = "settings")
 
 class SettingsRepositoryImpl(
     private val context: Context

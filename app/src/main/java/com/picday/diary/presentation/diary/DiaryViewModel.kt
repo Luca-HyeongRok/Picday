@@ -8,11 +8,10 @@ import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
 import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
 import com.picday.diary.domain.usecase.settings.GetDateCoverPhotoUseCase
 import com.picday.diary.domain.usecase.settings.SetDateCoverPhotoUseCase
-import kotlinx.coroutines.flow.firstOrNull
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import androidx.lifecycle.ViewModel
+import com.picday.diary.domain.updater.CalendarWidgetUpdater
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +23,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import javax.inject.Inject
 
 @HiltViewModel
 class DiaryViewModel @Inject constructor(
@@ -34,7 +35,8 @@ class DiaryViewModel @Inject constructor(
     private val getPhotos: GetPhotosUseCase,
     private val hasAnyRecordUseCase: HasAnyRecordUseCase,
     private val getDateCoverPhoto: GetDateCoverPhotoUseCase,
-    private val setDateCoverPhoto: SetDateCoverPhotoUseCase
+    private val setDateCoverPhoto: SetDateCoverPhotoUseCase,
+    private val widgetUpdater: CalendarWidgetUpdater
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DiaryUiState())
     val uiState: StateFlow<DiaryUiState> = _uiState.asStateFlow()
@@ -144,9 +146,10 @@ class DiaryViewModel @Inject constructor(
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String?) {
         withContext(Dispatchers.IO) {
             setDateCoverPhoto(date, uri)
-            _uiState.update { current ->
-                current.copy(coverPhotoByDate = current.coverPhotoByDate + (date to uri))
-            }
         }
+        _uiState.update { current ->
+            current.copy(coverPhotoByDate = current.coverPhotoByDate + (date to uri))
+        }
+        widgetUpdater.updateAll()
     }
 }

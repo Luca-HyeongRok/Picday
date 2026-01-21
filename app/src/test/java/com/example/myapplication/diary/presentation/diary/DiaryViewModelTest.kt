@@ -16,6 +16,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import com.picday.diary.domain.updater.CalendarWidgetUpdater
 import java.time.LocalDate
 
 /**
@@ -29,12 +30,15 @@ class DiaryViewModelTest {
 
     private lateinit var diaryRepository: FakeDiaryRepository
     private lateinit var settingsRepository: FakeSettingsRepository
+    private lateinit var widgetUpdater: FakeCalendarWidgetUpdater
     private lateinit var viewModel: DiaryViewModel
 
     @Before
     fun setUp() {
         diaryRepository = FakeDiaryRepository()
         settingsRepository = FakeSettingsRepository()
+        widgetUpdater = FakeCalendarWidgetUpdater()
+        
         // ViewModel init 블록에서 updateUiForDate(now)가 호출됨
         viewModel = DiaryViewModel(
             getDiariesByDate = GetDiariesByDateUseCase(diaryRepository),
@@ -42,7 +46,8 @@ class DiaryViewModelTest {
             getPhotos = GetPhotosUseCase(diaryRepository),
             hasAnyRecordUseCase = HasAnyRecordUseCase(diaryRepository),
             getDateCoverPhoto = GetDateCoverPhotoUseCase(settingsRepository),
-            setDateCoverPhoto = SetDateCoverPhotoUseCase(settingsRepository)
+            setDateCoverPhoto = SetDateCoverPhotoUseCase(settingsRepository),
+            widgetUpdater = widgetUpdater
         )
     }
 
@@ -227,6 +232,25 @@ class DiaryViewModelTest {
                 state = awaitItem()
             }
             assertEquals(target, state.selectedDate)
+        }
+    }
+    @Test
+    fun `대표 배경 저장 시 위젯 갱신 로직이 호출되어야 한다`() = runTest {
+        // Given
+        val date = LocalDate.of(2024, 5, 1)
+        val uri = "new_cover_uri"
+
+        // When
+        viewModel.saveDateCoverPhoto(date, uri)
+
+        // Then
+        assertEquals(1, widgetUpdater.updateCallCount)
+    }
+
+    private class FakeCalendarWidgetUpdater : CalendarWidgetUpdater {
+        var updateCallCount = 0
+        override fun updateAll() {
+            updateCallCount++
         }
     }
 }
