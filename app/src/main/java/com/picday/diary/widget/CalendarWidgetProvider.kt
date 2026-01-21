@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.RemoteViews
+import android.util.Log
 import androidx.datastore.preferences.core.stringPreferencesKey
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -68,7 +69,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
     ) {
         val today = LocalDate.now()
         // Format example: 9.21 / Tue
-        val formattedDate = today.format(DateTimeFormatter.ofPattern("M.d / E", Locale.ENGLISH))
+        val formattedDate = today.format(DateTimeFormatter.ofPattern("M.d / E", Locale.getDefault()))
 
         // Get Photo URI from DataStore
         val dateKey = stringPreferencesKey("cover_${today}")
@@ -77,6 +78,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 .map { preferences -> preferences[dateKey] }
                 .first()
         } catch (e: Exception) {
+            Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)
             null
         }
 
