@@ -7,4 +7,4 @@
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
     android:previewImage="@drawable/sample_photo_1"
-    android:description="Today's date and daily photo." />
+    android:description="@string/widget_calendar_description" />
