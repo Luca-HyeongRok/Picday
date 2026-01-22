@@ -44,22 +44,42 @@ import com.picday.diary.presentation.theme.AppColors
 import com.picday.diary.presentation.theme.AppShapes
 import java.time.LocalDate
 
+import com.picday.diary.MainActivity
+
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainScreen(initialDate: LocalDate? = null) {
+fun MainScreen(deepLinkEvent: MainActivity.DeepLinkEvent? = null) {
     val sharedViewModel: SharedViewModel = viewModel()
 
-    // Initialize SharedViewModel with the date if provided
-    LaunchedEffect(initialDate) {
-        if (initialDate != null) {
-            sharedViewModel.updateSelectedDate(initialDate)
+    // 초기화 로직: 딥링크(위젯)로 진입한 경우, [Calendar, Diary] 스택으로 시작
+    val initialStack = remember(Unit) {
+        if (deepLinkEvent != null) {
+            listOf(MainDestination.Calendar, MainDestination.Diary)
+        } else {
+            listOf(MainDestination.Calendar)
         }
     }
 
-    val backStack = if (initialDate != null) {
-        rememberNavBackStack(MainDestination.Calendar, MainDestination.Diary)
-    } else {
-        rememberNavBackStack(MainDestination.Calendar)
+    val backStack = rememberNavBackStack(*initialStack.toTypedArray())
+    
+    // 핫 스타트 / 딥링크 네비게이션 처리
+    LaunchedEffect(deepLinkEvent) {
+        if (deepLinkEvent == null) return@LaunchedEffect
+        
+        sharedViewModel.updateSelectedDate(deepLinkEvent.date)
+        
+        // 일관된 UX를 위해 스택을 [Calendar, Diary] 상태로 보장합니다.
+        // 이미 해당 상태가 아니라면 스택을 재설정하여 사이드 이펙트를 방지하고, 
+        // "입구 역할" 규칙을 엄격히 준수합니다.
+        val current = backStack.asMainDestinations()
+        val safeResetNeeded = current.last() != MainDestination.Diary || current.size != 2
+        
+        if (safeResetNeeded) {
+            backStack.clear()
+            backStack.add(MainDestination.Calendar)
+            backStack.add(MainDestination.Diary)
+        }
+        // 이미 다이어리 화면에 있다면, 위 그 위의 updateSelectedDate 호출로 데이터 갱신이 처리됩니다.
     }
     val currentDestination = backStack.last()
     val isWriteMode = currentDestination is MainDestination.Write

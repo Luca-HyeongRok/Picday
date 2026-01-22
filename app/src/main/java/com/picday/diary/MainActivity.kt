@@ -5,7 +5,6 @@ import android.content.ContentValues
 import android.os.Build
 import android.provider.MediaStore
 import androidx.lifecycle.lifecycleScope
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.picday.diary.presentation.main.MainScreen
@@ -13,10 +12,17 @@ import com.picday.diary.presentation.theme.PicDayTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.content.Intent
+import androidx.activity.ComponentActivity
 import com.picday.diary.widget.CalendarWidgetProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var deepLinkEvent by mutableStateOf<DeepLinkEvent?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,21 +31,39 @@ class MainActivity : ComponentActivity() {
         }
         CalendarWidgetProvider.updateAll(this)
 
-        val startDateString = intent.getStringExtra(EXTRA_START_DATE)
-        val startDate = startDateString?.let {
-            try {
-                java.time.LocalDate.parse(it)
-            } catch (e: Exception) {
-                null
-            }
-        }
+        handleIntent(intent)
 
         setContent {
             PicDayTheme() {
-                MainScreen(initialDate = startDate)
+                MainScreen(deepLinkEvent = deepLinkEvent)
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val startDateString = intent.getStringExtra(EXTRA_START_DATE) ?: return
+        
+        try {
+            val date = java.time.LocalDate.parse(startDateString)
+            // Create a new event to trigger LaunchedEffect even if date is same
+            deepLinkEvent = DeepLinkEvent(date)
+        } catch (e: Exception) {
+            // Ignore invalid date formats, fallback to default behavior (Calendar/Today)
+            e.printStackTrace()
+        }
+    }
+    
+    // Wrapper to ensure unique events for LaunchedEffect
+    data class DeepLinkEvent(
+        val date: java.time.LocalDate,
+        val timestamp: Long = System.nanoTime()
+    )
 
     companion object {
         const val EXTRA_START_DATE = "start_date"
