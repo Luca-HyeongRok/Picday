@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.os.Binder
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
@@ -98,6 +99,7 @@ class CalendarRemoteViewsFactory(
         val preferences = try {
             context.dataStore.data.first()
         } catch (e: Exception) {
+            Log.w("CalendarRemoteViewsFactory", "DataStore read failure (widget)", e)
             null
         }
 
