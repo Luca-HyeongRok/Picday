@@ -21,7 +21,7 @@ import androidx.compose.runtime.setValue
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private var deepLinkEvent by mutableStateOf<DeepLinkEvent?>(null)
+    private var deepLinkUri by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +34,8 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            PicDayTheme() {
-                MainScreen(deepLinkEvent = deepLinkEvent)
+            PicDayTheme {
+                MainScreen(deepLinkUri = deepLinkUri)
             }
         }
     }
@@ -47,26 +47,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
-        val startDateString = intent.getStringExtra(EXTRA_START_DATE) ?: return
-        
-        try {
-            val date = java.time.LocalDate.parse(startDateString)
-            // Create a new event to trigger LaunchedEffect even if date is same
-            deepLinkEvent = DeepLinkEvent(date)
-        } catch (e: Exception) {
-            // Ignore invalid date formats, fallback to default behavior (Calendar/Today)
-            e.printStackTrace()
+        // 위젯을 통해 전달된 기존 Extra 기반의 날짜 처리
+        val startDateString = intent.getStringExtra("start_date")
+        if (startDateString != null) {
+            // 기존 위젯 진입점을 새로운 딥링크 URI 형식으로 변환합니다.
+            // timestamp를 추가하여 동일한 딥링크가 반복 호출되어도 `LaunchedEffect`가 트리거되도록 합니다.
+            this.deepLinkUri = "app://picday.co/diary/$startDateString#${System.nanoTime()}"
+            return
         }
-    }
-    
-    // Wrapper to ensure unique events for LaunchedEffect
-    data class DeepLinkEvent(
-        val date: java.time.LocalDate,
-        val timestamp: Long = System.nanoTime()
-    )
 
-    companion object {
-        const val EXTRA_START_DATE = "start_date"
+        // 표준 딥링크 (intent.data) 처리
+        val deepLinkData = intent.data ?: return
+        // timestamp를 추가하여 동일한 딥링크가 반복 호출되어도 `LaunchedEffect`가 트리거되도록 합니다.
+        this.deepLinkUri = deepLinkData.toString() + "#${System.nanoTime()}"
     }
 
     private fun seedSampleImagesIfNeeded() {

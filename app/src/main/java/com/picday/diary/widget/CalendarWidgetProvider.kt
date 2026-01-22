@@ -1,6 +1,5 @@
 package com.picday.diary.widget
 
-import android.content.ComponentName
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -166,7 +165,9 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         }
 
         val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_START_DATE, today.toString())
+            val deepLinkDate = today.toString()
+            val deepLinkUriWithTimestamp = "app://picday.co/diary/$deepLinkDate#${System.nanoTime()}"
+            data = Uri.parse(deepLinkUriWithTimestamp)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
