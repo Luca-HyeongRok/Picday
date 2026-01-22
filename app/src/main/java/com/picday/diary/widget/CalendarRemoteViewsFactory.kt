@@ -103,17 +103,21 @@ class CalendarRemoteViewsFactory(
             null
         }
 
-        val photosByDate = diariesInMonth.mapNotNull { diary ->
-            val coverKey = stringPreferencesKey("cover_${diary.date}")
-            val coverUri = preferences?.get(coverKey)
-            val fallbackUri = if (coverUri == null) {
-                diaryRepository.getPhotosSuspend(diary.id).firstOrNull()?.uri
-            } else {
-                null
+        val photosByDate = diariesInMonth
+            .groupBy { it.date }
+            .mapNotNull { (date, diaries) ->
+                val representativeDiary = diaries.maxByOrNull { it.createdAt } ?: return@mapNotNull null
+                val coverKey = stringPreferencesKey("cover_$date")
+                val coverUri = preferences?.get(coverKey)
+                val fallbackUri = if (coverUri == null) {
+                    diaryRepository.getPhotosSuspend(representativeDiary.id).firstOrNull()?.uri
+                } else {
+                    null
+                }
+                val selectedUri = coverUri ?: fallbackUri
+                selectedUri?.let { uri -> date to uri }
             }
-            val selectedUri = coverUri ?: fallbackUri
-            selectedUri?.let { uri -> diary.date to uri }
-        }.toMap()
+            .toMap()
 
         val bitmaps = mutableMapOf<LocalDate, Bitmap>()
         for ((date, uri) in photosByDate) {
