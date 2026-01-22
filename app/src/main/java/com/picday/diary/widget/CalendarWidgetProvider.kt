@@ -139,18 +139,18 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         val formatter = DateTimeFormatter.ofPattern("yyyy년 MMMM", Locale.KOREAN)
         views.setTextViewText(R.id.month_year_text, month.format(formatter))
 
-        val dateKey = stringPreferencesKey("cover_${month}")
-        val coverUriString = try {
+        val backgroundKey = stringPreferencesKey("calendar_background_uri")
+        val backgroundUriString = try {
             context.dataStore.data
-                .map { preferences -> preferences[dateKey] }
+                .map { preferences -> preferences[backgroundKey] }
                 .first()
         } catch (e: Exception) {
-            Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)
+            Log.w("CalendarWidget", "Failed to read background photo from DataStore", e)
             null
         }
 
-        val bitmap = if (coverUriString != null) {
-            loadBitmap(context, coverUriString)
+        val bitmap = if (backgroundUriString != null) {
+            loadBitmap(context, backgroundUriString)
         } else {
             null
         }
