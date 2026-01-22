@@ -99,7 +99,10 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         }
 
         // Setup click intent to launch MainActivity
-        val intent = Intent(context, MainActivity::class.java)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_START_DATE, today.toString())
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         val pendingIntent = PendingIntent.getActivity(
             context,
             0,

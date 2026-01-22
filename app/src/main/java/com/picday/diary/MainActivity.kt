@@ -24,11 +24,25 @@ class MainActivity : ComponentActivity() {
             seedSampleImagesIfNeeded()
         }
         CalendarWidgetProvider.updateAll(this)
-        setContent {
-            PicDayTheme() {
-                MainScreen()
+
+        val startDateString = intent.getStringExtra(EXTRA_START_DATE)
+        val startDate = startDateString?.let {
+            try {
+                java.time.LocalDate.parse(it)
+            } catch (e: Exception) {
+                null
             }
         }
+
+        setContent {
+            PicDayTheme() {
+                MainScreen(initialDate = startDate)
+            }
+        }
+    }
+
+    companion object {
+        const val EXTRA_START_DATE = "start_date"
     }
 
     private fun seedSampleImagesIfNeeded() {

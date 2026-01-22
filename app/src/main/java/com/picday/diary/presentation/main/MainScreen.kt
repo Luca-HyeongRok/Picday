@@ -46,10 +46,21 @@ import java.time.LocalDate
 
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun MainScreen() {
+fun MainScreen(initialDate: LocalDate? = null) {
     val sharedViewModel: SharedViewModel = viewModel()
-    
-    val backStack = rememberNavBackStack(MainDestination.Calendar)
+
+    // Initialize SharedViewModel with the date if provided
+    LaunchedEffect(initialDate) {
+        if (initialDate != null) {
+            sharedViewModel.updateSelectedDate(initialDate)
+        }
+    }
+
+    val backStack = if (initialDate != null) {
+        rememberNavBackStack(MainDestination.Calendar, MainDestination.Diary)
+    } else {
+        rememberNavBackStack(MainDestination.Calendar)
+    }
     val currentDestination = backStack.last()
     val isWriteMode = currentDestination is MainDestination.Write
     val selectedDate by sharedViewModel.selectedDate.collectAsState()
