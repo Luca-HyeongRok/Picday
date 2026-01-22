@@ -115,16 +115,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-
-        // 5x5 위젯에 충분한 크기인지 확인 (임계값은 기기 밀도에 따라 조정 필요)
-        if (minWidth > 220 && minHeight > 220) {
-            updateMainCalendarWidget(context, appWidgetManager, appWidgetId)
-        } else {
-            updateCoverWidget(context, appWidgetManager, appWidgetId)
-        }
+        updateMainCalendarWidget(context, appWidgetManager, appWidgetId)
     }
 
     private suspend fun updateMainCalendarWidget(
