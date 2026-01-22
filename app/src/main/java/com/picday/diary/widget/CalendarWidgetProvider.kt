@@ -139,6 +139,28 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         val formatter = DateTimeFormatter.ofPattern("yyyy년 MMMM", Locale.KOREAN)
         views.setTextViewText(R.id.month_year_text, month.format(formatter))
 
+        val dateKey = stringPreferencesKey("cover_${month}")
+        val coverUriString = try {
+            context.dataStore.data
+                .map { preferences -> preferences[dateKey] }
+                .first()
+        } catch (e: Exception) {
+            Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)
+            null
+        }
+
+        val bitmap = if (coverUriString != null) {
+            loadBitmap(context, coverUriString)
+        } else {
+            null
+        }
+
+        if (bitmap != null) {
+            views.setImageViewBitmap(R.id.widget_bg, bitmap)
+        } else {
+            views.setImageViewResource(R.id.widget_bg, R.drawable.sample_photo_1)
+        }
+
         // GridView 어댑터 설정
         val intent = Intent(context, CalendarWidgetService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
