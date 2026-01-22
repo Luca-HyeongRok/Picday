@@ -36,6 +36,7 @@
                 android:layout_alignParentStart="true"
                 android:gravity="center"
                 android:text="◀"
+                android:contentDescription="@string/widget_prev_month"
                 android:textSize="14sp"
                 android:textColor="@android:color/white" />
 
@@ -57,6 +58,7 @@
                 android:layout_alignParentEnd="true"
                 android:gravity="center"
                 android:text="▶"
+                android:contentDescription="@string/widget_next_month"
                 android:textSize="14sp"
                 android:textColor="@android:color/white" />
         </RelativeLayout>
@@ -68,13 +70,13 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="4dp">
 
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="S" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="M" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="T" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="W" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="T" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="F" />
-            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="S" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_sun" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_mon" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_tue" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_wed" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_thu" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_fri" />
+            <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_sat" />
         </LinearLayout>
 
         <GridView
