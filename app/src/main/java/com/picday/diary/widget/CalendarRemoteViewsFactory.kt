@@ -9,15 +9,16 @@ import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import androidx.room.Room
+import androidx.datastore.preferences.core.stringPreferencesKey
 import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.size.Size
-import com.picday.diary.MainActivity
 import com.picday.diary.R
 import com.picday.diary.data.diary.database.PicDayDatabase
 import com.picday.diary.data.diary.repository.RoomDiaryRepository
+import com.picday.diary.data.repository.dataStore
 import com.picday.diary.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -94,10 +95,22 @@ class CalendarRemoteViewsFactory(
         val endDate = currentMonth.atEndOfMonth()
         val diariesInMonth = diaryRepository.getDiariesStream(startDate, endDate).first()
 
+        val preferences = try {
+            context.dataStore.data.first()
+        } catch (e: Exception) {
+            null
+        }
+
         val photosByDate = diariesInMonth.mapNotNull { diary ->
-            diaryRepository.getPhotosSuspend(diary.id).firstOrNull()?.uri?.let { uri ->
-                diary.date to uri
+            val coverKey = stringPreferencesKey("cover_${diary.date}")
+            val coverUri = preferences?.get(coverKey)
+            val fallbackUri = if (coverUri == null) {
+                diaryRepository.getPhotosSuspend(diary.id).firstOrNull()?.uri
+            } else {
+                null
             }
+            val selectedUri = coverUri ?: fallbackUri
+            selectedUri?.let { uri -> diary.date to uri }
         }.toMap()
 
         val bitmaps = mutableMapOf<LocalDate, Bitmap>()
@@ -153,7 +166,7 @@ class CalendarRemoteViewsFactory(
 
         // 날짜 클릭 시 앱 실행을 위한 Intent 설정
         val fillInIntent = Intent().apply {
-            putExtra(MainActivity.EXTRA_START_DATE, date.toString())
+            putExtra("start_date", date.toString())
         }
         remoteViews.setOnClickFillInIntent(R.id.day_cell_root, fillInIntent)
 

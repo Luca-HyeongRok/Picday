@@ -209,8 +209,8 @@ fun MainScreen(deepLinkUri: String? = null) {
                             editDiaryId = destination.editDiaryId,
                             onBack = { onNavigate(MainNavEvent.WriteBack) },
                             onSaveComplete = { onNavigate(MainNavEvent.WriteSaveComplete) },
-                            onDelete = {
-                                // 삭제 완료 이벤트만 onNavigate로 전달 (실제 삭제는 ViewModel에서)
+                            onDelete = { diaryId ->
+                                writeViewModel.onDelete(diaryId)
                                 onNavigate(MainNavEvent.WriteDeleteComplete)
                             }
                         )

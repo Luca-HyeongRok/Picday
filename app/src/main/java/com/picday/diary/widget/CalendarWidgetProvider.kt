@@ -123,7 +123,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         }
         val clickPendingIntent = PendingIntent.getActivity(
             context, 0, clickIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
         views.setPendingIntentTemplate(R.id.calendar_grid, clickPendingIntent)
 
