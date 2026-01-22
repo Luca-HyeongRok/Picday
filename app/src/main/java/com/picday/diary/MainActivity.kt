@@ -5,7 +5,6 @@ import android.content.ContentValues
 import android.os.Build
 import android.provider.MediaStore
 import androidx.lifecycle.lifecycleScope
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.picday.diary.presentation.main.MainScreen
@@ -13,10 +12,17 @@ import com.picday.diary.presentation.theme.PicDayTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.content.Intent
+import androidx.activity.ComponentActivity
 import com.picday.diary.widget.CalendarWidgetProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var deepLinkUri by mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -24,11 +30,36 @@ class MainActivity : ComponentActivity() {
             seedSampleImagesIfNeeded()
         }
         CalendarWidgetProvider.updateAll(this)
+
+        handleIntent(intent)
+
         setContent {
-            PicDayTheme() {
-                MainScreen()
+            PicDayTheme {
+                MainScreen(deepLinkUri = deepLinkUri)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        // 위젯을 통해 전달된 기존 Extra 기반의 날짜 처리
+        val startDateString = intent.getStringExtra("start_date")
+        if (startDateString != null) {
+            // 기존 위젯 진입점을 새로운 딥링크 URI 형식으로 변환합니다.
+            // timestamp를 추가하여 동일한 딥링크가 반복 호출되어도 `LaunchedEffect`가 트리거되도록 합니다.
+            this.deepLinkUri = "app://picday.co/diary/$startDateString#${System.nanoTime()}"
+            return
+        }
+
+        // 표준 딥링크 (intent.data) 처리
+        val deepLinkData = intent.data ?: return
+        // timestamp를 추가하여 동일한 딥링크가 반복 호출되어도 `LaunchedEffect`가 트리거되도록 합니다.
+        this.deepLinkUri = deepLinkData.toString() + "#${System.nanoTime()}"
     }
 
     private fun seedSampleImagesIfNeeded() {
