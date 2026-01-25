@@ -153,16 +153,15 @@ class CalendarRemoteViewsFactory(
         }
 
         remoteViews.setViewVisibility(R.id.day_cell_root, View.VISIBLE)
-        remoteViews.setTextViewText(R.id.day_text, date.dayOfMonth.toString())
+        val dayText = date.dayOfMonth.toString()
+        remoteViews.setTextViewText(R.id.day_text, dayText)
+        remoteViews.setTextViewText(R.id.day_text_on_photo, dayText)
 
-        // 오늘 날짜 강조
+        // 오늘 날짜 강조 (링 표시)
         if (date.isEqual(LocalDate.now())) {
-            remoteViews.setInt(R.id.day_text, "setBackgroundResource", R.drawable.widget_today_background)
-            remoteViews.setTextColor(R.id.day_text, Color.BLACK)
+            remoteViews.setViewVisibility(R.id.day_ring, View.VISIBLE)
         } else {
-            remoteViews.setInt(R.id.day_text, "setBackgroundResource", android.R.color.transparent)
-            // 테마에 맞는 기본 텍스트 색상 적용 필요
-            remoteViews.setTextColor(R.id.day_text, Color.GRAY)
+            remoteViews.setViewVisibility(R.id.day_ring, View.GONE)
         }
 
         // 사진이 있는 경우 썸네일 표시
@@ -170,10 +169,18 @@ class CalendarRemoteViewsFactory(
         if (photoBitmap != null) {
             remoteViews.setImageViewBitmap(R.id.photo_thumbnail, photoBitmap)
             remoteViews.setViewVisibility(R.id.photo_thumbnail, View.VISIBLE)
-            // 사진이 있으면 날짜 텍스트를 흰색으로 변경하여 가독성 확보
-            remoteViews.setTextColor(R.id.day_text, Color.WHITE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.VISIBLE)
+            remoteViews.setViewVisibility(R.id.day_text, View.GONE)
         } else {
             remoteViews.setViewVisibility(R.id.photo_thumbnail, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text, View.VISIBLE)
+            val textColor = when (date.dayOfWeek) {
+                java.time.DayOfWeek.SUNDAY -> Color.parseColor("#E53935")
+                java.time.DayOfWeek.SATURDAY -> Color.parseColor("#1E88E5")
+                else -> Color.parseColor("#222222")
+            }
+            remoteViews.setTextColor(R.id.day_text, textColor)
         }
 
         // 날짜 클릭 시 앱 실행을 위한 Intent 설정

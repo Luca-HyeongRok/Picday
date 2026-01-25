@@ -8,22 +8,47 @@
 
     <ImageView
         android:id="@+id/photo_thumbnail"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="center"
         android:scaleType="centerCrop"
         android:visibility="gone"
         tools:src="@drawable/sample_photo_2"
         tools:visibility="visible"
         android:contentDescription="@null" />
 
+    <ImageView
+        android:id="@+id/day_ring"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:background="@drawable/widget_today_background"
+        android:visibility="gone"
+        android:contentDescription="@null" />
+
     <TextView
         android:id="@+id/day_text"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_gravity="center"
         android:gravity="center"
         android:textSize="12sp"
         android:textColor="?android:attr/textColorPrimary"
+        tools:text="31" />
+
+    <TextView
+        android:id="@+id/day_text_on_photo"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="@android:color/white"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="3"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:visibility="gone"
         tools:text="31" />
 
 </FrameLayout>
