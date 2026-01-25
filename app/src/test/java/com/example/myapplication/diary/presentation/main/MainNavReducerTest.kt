@@ -1,6 +1,6 @@
 package com.picday.diary.presentation.main
 
-import com.picday.diary.presentation.navigation.WriteMode
+import com.picday.diary.core.navigation.WriteMode
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate

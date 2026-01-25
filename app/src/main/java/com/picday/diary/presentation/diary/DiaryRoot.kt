@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.remember
-import com.picday.diary.presentation.navigation.WriteMode
+import com.picday.diary.core.navigation.WriteMode
 import com.picday.diary.presentation.write.WriteScreen
 import com.picday.diary.presentation.write.WriteViewModel
 import com.picday.diary.presentation.write.state.WriteUiMode
