@@ -54,10 +54,6 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                         } else {
                             currentMonth.plusMonths(1)
                         }
-                        Log.d(
-                            "widget",
-                            "month nav appWidgetId=$appWidgetId from=${currentMonth} to=${newMonth}"
-                        )
                         saveWidgetMonth(context, appWidgetId, newMonth)
 
                         val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -136,13 +132,8 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         // 월/연도 텍스트 설정 (전달된 specifiedMonth가 있으면 즉시 사용)
         val currentMonth = specifiedMonth ?: loadWidgetMonth(context, appWidgetId)
         val monthDate = currentMonth.atDay(1)
-        Log.d(
-            "widget",
-            "header month appWidgetId=$appWidgetId month=${monthDate.year}-${monthDate.monthValue}"
-        )
         val headerText = "${monthDate.year}년 ${monthDate.monthValue}월"
         views.setTextViewText(R.id.month_year_text, headerText)
-        Log.d("widget", "header text appWidgetId=$appWidgetId text=$headerText")
 
         val backgroundKey = stringPreferencesKey("calendar_background_uri")
         val backgroundUriString = try {
