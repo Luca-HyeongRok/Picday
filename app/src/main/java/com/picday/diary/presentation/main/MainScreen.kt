@@ -35,6 +35,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.picday.diary.core.navigation.WriteMode
 import com.picday.diary.presentation.calendar.CalendarScreen
 import com.picday.diary.presentation.common.SharedViewModel
 import com.picday.diary.presentation.diary.DiaryRoot
@@ -43,7 +44,6 @@ import com.picday.diary.presentation.diary.DiaryViewModel
 import com.picday.diary.presentation.navigation.MainNavEvent
 import com.picday.diary.presentation.navigation.NavigationRoot
 import com.picday.diary.presentation.navigation.Screen
-import com.picday.diary.presentation.navigation.WriteMode
 import com.picday.diary.presentation.theme.AppColors
 import com.picday.diary.presentation.theme.AppShapes
 import java.time.LocalDate

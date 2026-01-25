@@ -1,11 +1,14 @@
 package com.picday.diary.presentation.navigation
 
 import android.net.Uri
+import com.picday.diary.core.navigation.NavEffect
+import com.picday.diary.core.navigation.NavEvent
+import com.picday.diary.core.navigation.WriteMode
 import com.picday.diary.presentation.main.MainDestination
 import java.time.LocalDate
 
 // Navigation 이벤트를 나타내는 sealed interface
-sealed interface MainNavEvent {
+sealed interface MainNavEvent : NavEvent {
     // 하단 탭 클릭 이벤트
     data class BottomTabClick(val target: MainDestination) : MainNavEvent
     // 캘린더 날짜 선택 이벤트
@@ -27,7 +30,7 @@ sealed interface MainNavEvent {
 }
 
 // Navigation 부수 효과를 나타내는 sealed interface
-sealed interface MainNavEffect {
+sealed interface MainNavEffect : NavEffect {
     // 현재 화면 하나를 스택에서 제거
     data object PopOne : MainNavEffect
     // 스택의 최상위 화면까지 모두 제거

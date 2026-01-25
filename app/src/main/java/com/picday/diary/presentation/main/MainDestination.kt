@@ -2,9 +2,10 @@ package com.picday.diary.presentation.main
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import com.picday.diary.core.navigation.AppRoute
 
 @Serializable
-sealed interface MainDestination : NavKey {
+sealed interface MainDestination : NavKey, AppRoute {
     @Serializable
     data object Calendar : MainDestination
 
