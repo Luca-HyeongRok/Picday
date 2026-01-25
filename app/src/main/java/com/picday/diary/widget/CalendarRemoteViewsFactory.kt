@@ -50,11 +50,15 @@ class CalendarRemoteViewsFactory(
     // 날짜별 사진 비트맵 맵 (미리 로드하여 사용)
     private var photoBitmaps: Map<LocalDate, Bitmap> = emptyMap()
     private var currentMonth: YearMonth = YearMonth.now()
+    private var widgetYear: Int = currentMonth.year
+    private var widgetMonth: Int = currentMonth.monthValue
 
     override fun onCreate() {
         // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
         val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db").build()
         diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
+        widgetYear = intent.getIntExtra("year", currentMonth.year)
+        widgetMonth = intent.getIntExtra("month", currentMonth.monthValue)
     }
 
     override fun onDataSetChanged() {
@@ -62,7 +66,9 @@ class CalendarRemoteViewsFactory(
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
-                currentMonth = YearMonth.now()
+                widgetYear = intent.getIntExtra("year", YearMonth.now().year)
+                widgetMonth = intent.getIntExtra("month", YearMonth.now().monthValue)
+                currentMonth = YearMonth.of(widgetYear, widgetMonth)
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }

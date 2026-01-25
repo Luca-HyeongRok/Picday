@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">PicDay</string>
+    <string name="widget_prev_month">Previous month</string>
+    <string name="widget_next_month">Next month</string>
+    <string name="widget_day_sun">S</string>
+    <string name="widget_day_mon">M</string>
+    <string name="widget_day_tue">T</string>
+    <string name="widget_day_wed">W</string>
+    <string name="widget_day_thu">T</string>
+    <string name="widget_day_fri">F</string>
+    <string name="widget_day_sat">S</string>
 </resources>

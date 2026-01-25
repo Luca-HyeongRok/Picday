@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
 import android.util.Log
+import androidx.core.content.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -22,6 +23,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -30,10 +32,37 @@ import com.picday.diary.data.repository.dataStore
 class CalendarWidgetProvider : AppWidgetProvider() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val prefsName = "calendar_widget_state"
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         when (intent.action) {
+            ACTION_PREV_MONTH,
+            ACTION_NEXT_MONTH -> {
+                val appWidgetId = intent.getIntExtra(
+                    AppWidgetManager.EXTRA_APPWIDGET_ID,
+                    AppWidgetManager.INVALID_APPWIDGET_ID
+                )
+                if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
+
+                val pendingResult = goAsync()
+                scope.launch {
+                    try {
+                        val currentMonth = loadWidgetMonth(context, appWidgetId)
+                        val newMonth = if (intent.action == ACTION_PREV_MONTH) {
+                            currentMonth.minusMonths(1)
+                        } else {
+                            currentMonth.plusMonths(1)
+                        }
+                        saveWidgetMonth(context, appWidgetId, newMonth)
+
+                        val appWidgetManager = AppWidgetManager.getInstance(context)
+                        updateAppWidget(context, appWidgetManager, appWidgetId)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
             Intent.ACTION_DATE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> {
@@ -86,16 +115,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-
-        // 5x5 위젯에 충분한 크기인지 확인 (임계값은 기기 밀도에 따라 조정 필요)
-        if (minWidth > 220 && minHeight > 220) {
-            updateMainCalendarWidget(context, appWidgetManager, appWidgetId)
-        } else {
-            updateCoverWidget(context, appWidgetManager, appWidgetId)
-        }
+        updateMainCalendarWidget(context, appWidgetManager, appWidgetId)
     }
 
     private suspend fun updateMainCalendarWidget(
@@ -106,16 +126,65 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.widget_calendar_main)
 
         // 월/연도 텍스트 설정
-        val month = LocalDate.now()
+        val month = loadWidgetMonth(context, appWidgetId).atDay(1)
         val formatter = DateTimeFormatter.ofPattern("yyyy년 MMMM", Locale.KOREAN)
         views.setTextViewText(R.id.month_year_text, month.format(formatter))
+
+        val backgroundKey = stringPreferencesKey("calendar_background_uri")
+        val backgroundUriString = try {
+            context.dataStore.data
+                .map { preferences -> preferences[backgroundKey] }
+                .first()
+        } catch (e: Exception) {
+            Log.w("CalendarWidget", "Failed to read background photo from DataStore", e)
+            null
+        }
+
+        val bitmap = if (backgroundUriString != null) {
+            loadBitmap(context, backgroundUriString)
+        } else {
+            null
+        }
+
+        if (bitmap != null) {
+            views.setImageViewBitmap(R.id.widget_bg, bitmap)
+        } else {
+            views.setImageViewResource(R.id.widget_bg, R.drawable.sample_photo_1)
+        }
 
         // GridView 어댑터 설정
         val intent = Intent(context, CalendarWidgetService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra("year", month.year)
+            putExtra("month", month.monthValue)
             data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
         views.setRemoteAdapter(R.id.calendar_grid, intent)
+
+        // 이전/다음 월 이동
+        val prevMonthIntent = Intent(context, CalendarWidgetProvider::class.java).apply {
+            action = ACTION_PREV_MONTH
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        val prevMonthPendingIntent = PendingIntent.getBroadcast(
+            context,
+            appWidgetId,
+            prevMonthIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.btn_prev_month, prevMonthPendingIntent)
+
+        val nextMonthIntent = Intent(context, CalendarWidgetProvider::class.java).apply {
+            action = ACTION_NEXT_MONTH
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        val nextMonthPendingIntent = PendingIntent.getBroadcast(
+            context,
+            appWidgetId + 1,
+            nextMonthIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.btn_next_month, nextMonthPendingIntent)
 
         // GridView 아이템 클릭 시 사용할 PendingIntent 템플릿 설정
         val clickIntent = Intent(context, MainActivity::class.java).apply {
@@ -205,6 +274,9 @@ class CalendarWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        private const val ACTION_PREV_MONTH = "com.picday.diary.widget.ACTION_PREV_MONTH"
+        private const val ACTION_NEXT_MONTH = "com.picday.diary.widget.ACTION_NEXT_MONTH"
+        private const val WIDGET_MONTH_PREFIX = "widget_month_"
         fun updateAll(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = android.content.ComponentName(context, CalendarWidgetProvider::class.java)
@@ -216,6 +288,21 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 }
                 context.sendBroadcast(intent)
             }
+        }
+    }
+
+    private fun loadWidgetMonth(context: Context, appWidgetId: Int): YearMonth {
+        val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+        val stored = prefs.getString("$WIDGET_MONTH_PREFIX$appWidgetId", null) ?: return YearMonth.now()
+        return runCatching {
+            YearMonth.parse(stored)
+        }.getOrElse { YearMonth.now() }
+    }
+
+    private fun saveWidgetMonth(context: Context, appWidgetId: Int, month: YearMonth) {
+        val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+        prefs.edit {
+            putString("$WIDGET_MONTH_PREFIX$appWidgetId", month.toString())
         }
     }
 }
