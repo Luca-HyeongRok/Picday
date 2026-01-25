@@ -4,6 +4,7 @@ import android.net.Uri
 import com.picday.diary.core.navigation.AppRoute
 import com.picday.diary.core.navigation.NavEffect
 import com.picday.diary.core.navigation.NavEvent
+import com.picday.diary.core.navigation.NavigationState
 import com.picday.diary.core.navigation.WriteMode
 import com.picday.diary.presentation.main.MainDestination
 import java.time.LocalDate
@@ -48,52 +49,73 @@ sealed interface MainNavEffect : NavEffect {
 
 // NavigationReducer의 결과
 data class NavResult(
-    val backStack: List<MainDestination>,
+    val state: NavigationState,
     val effects: List<MainNavEffect> = emptyList()
 )
 
 // Navigation 이벤트를 처리하여 새로운 백스택과 부수 효과를 반환하는 Reducer 함수
 fun reduceMainNav(
-    backStack: List<MainDestination>,
+    state: NavigationState,
     event: MainNavEvent,
 ): NavResult {
+    val backStack = state.backStack.asMainDestinations()
     // 백스택이 비어있는 경우 기본 스택을 반환
-    if (backStack.isEmpty()) return NavResult(backStack)
+    if (backStack.isEmpty()) return NavResult(state)
 
     return when (event) {
         is MainNavEvent.BottomTabClick -> {
             val nextBackStack = switchBottomTab(backStack, event.target)
+            val nextState = state.copy(backStack = nextBackStack)
             val effects = if (nextBackStack == backStack) {
                 emptyList()
             } else {
                 listOf(MainNavEffect.ReplaceRoot(event.target))
             }
-            NavResult(nextBackStack, effects)
+            NavResult(nextState, effects)
         }
         is MainNavEvent.CalendarDateSelected -> {
             val destination = MainDestination.Write(event.date.toString(), event.mode.name, null)
-            NavResult(
+            val nextState = state.copy(
                 backStack = pushWrite(backStack, event.date, event.mode, editDiaryId = null),
-                effects = listOf(MainNavEffect.Navigate(destination))
+                selectedDate = event.date
+            )
+            NavResult(
+                state = nextState,
+                effects = listOf(
+                    MainNavEffect.UpdateSelectedDate(event.date),
+                    MainNavEffect.Navigate(destination)
+                )
             )
         }
         is MainNavEvent.DiaryWriteClick -> {
             val destination = MainDestination.Write(event.date.toString(), event.mode.name, null)
-            NavResult(
+            val nextState = state.copy(
                 backStack = pushWrite(backStack, event.date, event.mode, editDiaryId = null),
-                effects = listOf(MainNavEffect.Navigate(destination))
+                selectedDate = event.date
+            )
+            NavResult(
+                state = nextState,
+                effects = listOf(
+                    MainNavEffect.UpdateSelectedDate(event.date),
+                    MainNavEffect.Navigate(destination)
+                )
             )
         }
         is MainNavEvent.DiaryEditClick -> {
             val destination = MainDestination.Write(event.date.toString(), WriteMode.VIEW.name, event.editDiaryId)
-            NavResult(
+            val nextState = state.copy(
                 backStack = pushWrite(
                     backStack,
                     event.date,
                     WriteMode.VIEW,
                     editDiaryId = event.editDiaryId
                 ),
+                selectedDate = event.date
+            )
+            NavResult(
+                state = nextState,
                 effects = listOf(
+                    MainNavEffect.UpdateSelectedDate(event.date),
                     MainNavEffect.Navigate(destination),
                     MainNavEffect.ConsumeEditDiary(event.editDiaryId)
                 )
@@ -101,37 +123,44 @@ fun reduceMainNav(
         }
         is MainNavEvent.WriteAddClick -> {
             val destination = MainDestination.Write(event.date.toString(), WriteMode.ADD.name, null)
-            NavResult(
+            val nextState = state.copy(
                 backStack = pushWrite(backStack, event.date, WriteMode.ADD, editDiaryId = null),
-                effects = listOf(MainNavEffect.Navigate(destination))
+                selectedDate = event.date
+            )
+            NavResult(
+                state = nextState,
+                effects = listOf(
+                    MainNavEffect.UpdateSelectedDate(event.date),
+                    MainNavEffect.Navigate(destination)
+                )
             )
         }
         MainNavEvent.WriteBack -> {
             val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
             val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
-            NavResult(backStack = nextBackStack, effects = effects)
+            NavResult(state = state.copy(backStack = nextBackStack), effects = effects)
         }
         MainNavEvent.WriteSaveComplete -> {
             val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
             val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
-            NavResult(backStack = nextBackStack, effects = effects)
+            NavResult(state = state.copy(backStack = nextBackStack), effects = effects)
         }
         MainNavEvent.WriteDeleteComplete -> {
             val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
             val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
-            NavResult(backStack = nextBackStack, effects = effects)
+            NavResult(state = state.copy(backStack = nextBackStack), effects = effects)
         }
         is MainNavEvent.ProcessDeepLink -> {
             val deepLinkUri = event.deepLinkUri
             if (deepLinkUri == null) {
                 // 딥링크가 없으면 현재 스택 유지
-                return NavResult(backStack)
+                return NavResult(state)
             }
 
             try {
                 val uri = Uri.parse(deepLinkUri)
                 if (uri.scheme == "app" && uri.host == "picday.co") {
-                    val path = uri.path ?: return NavResult(backStack)
+                    val path = uri.path ?: return NavResult(state)
 
                     // "/diary/{yyyy-MM-dd}" 형태의 딥링크 처리
                     if (path.startsWith("/diary/")) {
@@ -145,15 +174,30 @@ fun reduceMainNav(
                             MainNavEffect.ReplaceRoot(MainDestination.Calendar),
                             MainNavEffect.Navigate(MainDestination.Diary)
                         )
-                        return NavResult(listOf(MainDestination.Calendar, MainDestination.Diary), effects)
+                        return NavResult(
+                            state.copy(
+                                backStack = listOf(MainDestination.Calendar, MainDestination.Diary),
+                                selectedDate = date
+                            ),
+                            effects
+                        )
                     }
                 }
             } catch (e: Exception) {
                 // 잘못된 형식의 URI는 무시하고 현재 흐름 유지
                 e.printStackTrace()
             }
-            return NavResult(backStack) // 처리되지 않은 딥링크는 현재 스택 유지
+            return NavResult(state) // 처리되지 않은 딥링크는 현재 스택 유지
         }
+    }
+}
+
+private fun List<AppRoute>.asMainDestinations(): List<MainDestination> {
+    return map { route ->
+        require(route is MainDestination) {
+            "MainNavGraph only supports MainDestination. Found: ${route::class.qualifiedName}"
+        }
+        route
     }
 }
 

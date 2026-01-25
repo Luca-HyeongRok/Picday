@@ -2,12 +2,14 @@ package com.picday.diary.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.picday.diary.core.navigation.AppRoute
+import com.picday.diary.core.navigation.NavigationState
 import com.picday.diary.presentation.common.SharedViewModel
 import com.picday.diary.presentation.main.MainDestination
 
@@ -27,6 +29,15 @@ fun NavigationRoot(
 ) {
     // NavBackStack의 초기 상태를 정의하고 소유합니다.
     val backStack = rememberNavBackStack(MainDestination.Calendar)
+    val initialSelectedDate by sharedViewModel.selectedDate.collectAsState()
+    var navigationState by remember {
+        mutableStateOf(
+            NavigationState(
+                backStack = listOf(MainDestination.Calendar),
+                selectedDate = initialSelectedDate
+            )
+        )
+    }
 
     // 처리해야 할 부수 효과(PopOne, PopToRoot 등) 리스트
     var pendingEffects by remember { mutableStateOf<List<MainNavEffect>>(emptyList()) }
@@ -37,7 +48,8 @@ fun NavigationRoot(
     val dispatchNav: (MainNavEvent) -> Unit = remember {
         { event ->
             // reduceMainNav 함수를 사용하여 현재 백스택과 이벤트를 기반으로 새로운 상태 계산
-            val result = reduceMainNav(backStack.asMainDestinations(), event)
+            val result = reduceMainNav(navigationState, event)
+            navigationState = result.state
             // 발생한 부수 효과를 저장하고 버전 업데이트
             pendingEffects = result.effects
             pendingEffectsVersion += 1
@@ -93,14 +105,14 @@ fun NavigationRoot(
     }
 
     // MainScreen에 변경 불가능한 백스택 뷰와 onNavigate 콜백을 전달합니다.
-    content(backStack.asMainDestinations(), dispatchNav)
+    content(navigationState.backStack.asMainDestinations(), dispatchNav)
 }
 
-private fun List<NavKey>.asMainDestinations(): List<MainDestination> {
-    return map { key ->
-        require(key is MainDestination) {
-            "NavigationRoot only supports MainDestination. Found: ${key::class.qualifiedName}"
+private fun List<AppRoute>.asMainDestinations(): List<MainDestination> {
+    return map { route ->
+        require(route is MainDestination) {
+            "NavigationRoot only supports MainDestination. Found: ${route::class.qualifiedName}"
         }
-        key
+        route
     }
 }
