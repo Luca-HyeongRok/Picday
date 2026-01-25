@@ -23,11 +23,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="18dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingVertical="6dp"
+            android:paddingHorizontal="8dp"
+            android:background="#22000000">
 
             <TextView
                 android:id="@+id/btn_prev_month"
@@ -38,7 +41,8 @@
                 android:text="◀"
                 android:contentDescription="@string/widget_prev_month"
                 android:textSize="14sp"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/white"
+                android:paddingTop="1dp" />
 
             <TextView
                 android:id="@+id/month_year_text"
@@ -49,6 +53,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
+                android:paddingTop="2dp"
                 tools:text="January 2026" />
 
             <TextView
@@ -60,15 +65,17 @@
                 android:text="▶"
                 android:contentDescription="@string/widget_next_month"
                 android:textSize="14sp"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/white"
+                android:paddingTop="1dp" />
         </RelativeLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp">
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp"
+            android:paddingHorizontal="4dp">
 
             <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_sun" />
             <TextView style="@style/Widget.PicDay.DayOfWeek" android:text="@string/widget_day_mon" />
@@ -84,6 +91,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
+            android:verticalSpacing="6dp"
+            android:horizontalSpacing="6dp"
             android:numColumns="7" />
 
     </LinearLayout>
