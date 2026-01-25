@@ -47,11 +47,6 @@ object DiaryModule {
         diaryDao: DiaryDao,
         diaryPhotoDao: DiaryPhotoDao
     ): DiaryRepository {
-        // DEBUG is in-memory with seed data, RELEASE uses Room.
-        return if (BuildConfig.DEBUG) {
-            InMemoryDiaryRepository(seedDiaryData())
-        } else {
-            RoomDiaryRepository(database, diaryDao, diaryPhotoDao)
-        }
+        return RoomDiaryRepository(database, diaryDao, diaryPhotoDao)
     }
 }

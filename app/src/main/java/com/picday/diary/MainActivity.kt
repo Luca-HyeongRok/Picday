@@ -13,6 +13,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.content.Intent
+import android.util.Log
 import androidx.activity.ComponentActivity
 import com.picday.diary.widget.CalendarWidgetProvider
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("WidgetClick", "MainActivity onCreate intent=$intent")
         enableEdgeToEdge()
         if (BuildConfig.DEBUG) {
             seedSampleImagesIfNeeded()
@@ -42,11 +44,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.d("WidgetClick", "MainActivity onNewIntent intent=$intent")
         setIntent(intent)
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: Intent) {
+        Log.d("WidgetClick", "MainActivity handleIntent intent=$intent")
         // 위젯을 통해 전달된 기존 Extra 기반의 날짜 처리
         val startDateString = intent.getStringExtra("start_date")
         if (startDateString != null) {

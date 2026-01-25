@@ -15,6 +15,7 @@ import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.size.Size
 import com.picday.diary.R
 import com.picday.diary.data.diary.database.PicDayDatabase
@@ -50,15 +51,12 @@ class CalendarRemoteViewsFactory(
     // 날짜별 사진 비트맵 맵 (미리 로드하여 사용)
     private var photoBitmaps: Map<LocalDate, Bitmap> = emptyMap()
     private var currentMonth: YearMonth = YearMonth.now()
-    private var widgetYear: Int = currentMonth.year
-    private var widgetMonth: Int = currentMonth.monthValue
 
     override fun onCreate() {
         // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
         val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db").build()
         diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
-        widgetYear = intent.getIntExtra("year", currentMonth.year)
-        widgetMonth = intent.getIntExtra("month", currentMonth.monthValue)
+        currentMonth = loadWidgetMonth()
     }
 
     override fun onDataSetChanged() {
@@ -66,9 +64,7 @@ class CalendarRemoteViewsFactory(
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
-                widgetYear = intent.getIntExtra("year", YearMonth.now().year)
-                widgetMonth = intent.getIntExtra("month", YearMonth.now().monthValue)
-                currentMonth = YearMonth.of(widgetYear, widgetMonth)
+                currentMonth = loadWidgetMonth()
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }
@@ -100,23 +96,30 @@ class CalendarRemoteViewsFactory(
     private suspend fun fetchDiaryPhotosAndBitmaps() {
         val startDate = currentMonth.atDay(1)
         val endDate = currentMonth.atEndOfMonth()
-        val diariesInMonth = diaryRepository.getDiariesStream(startDate, endDate).first()
+        val diariesInMonth = diaryRepository.getDiariesByDateRange(startDate, endDate)
 
         val preferences = try {
             context.dataStore.data.first()
         } catch (e: Exception) {
-            Log.w("CalendarRemoteViewsFactory", "DataStore read failure (widget)", e)
+            Log.w("widget", "DataStore read failure (widget)", e)
             null
         }
 
         val photosByDate = diariesInMonth
             .groupBy { it.date }
             .mapNotNull { (date, diaries) ->
-                val representativeDiary = diaries.maxByOrNull { it.createdAt } ?: return@mapNotNull null
                 val coverKey = stringPreferencesKey("cover_$date")
                 val coverUri = preferences?.get(coverKey)
                 val fallbackUri = if (coverUri == null) {
-                    diaryRepository.getPhotos(representativeDiary.id).firstOrNull()?.uri
+                    var firstUri: String? = null
+                    for (diary in diaries) {
+                        val uri = diaryRepository.getPhotos(diary.id).firstOrNull()?.uri
+                        if (uri != null) {
+                            firstUri = uri
+                            break
+                        }
+                    }
+                    firstUri
                 } else {
                     null
                 }
@@ -129,13 +132,21 @@ class CalendarRemoteViewsFactory(
         for ((date, uri) in photosByDate) {
             val request = ImageRequest.Builder(context)
                 .data(uri)
-                .size(Size(100, 100)) // 위젯 썸네일 크기 조절
+                .allowHardware(false) // 위젯에서는 하드웨어 비트맵 사용 불가
+                .size(Size(120, 120)) // 썸네일 크기를 약간 키움
                 .build()
+            
             val result = imageLoader.execute(request)
             if (result is SuccessResult) {
                 (result.image as? BitmapImage)?.bitmap?.let {
+                    // 원형 비트맵으로 변환하여 저장
                     bitmaps[date] = it.toCircularBitmap()
                 }
+                if (bitmaps[date] == null) {
+                    Log.w("WidgetPhoto", "비트맵 변환 실패: date=$date, uri=$uri")
+                }
+            } else {
+                Log.w("WidgetPhoto", "이미지 로드 실패: date=$date, uri=$uri")
             }
         }
         photoBitmaps = bitmaps
@@ -146,23 +157,29 @@ class CalendarRemoteViewsFactory(
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_calendar_day)
 
         if (date == null) {
-            // 현재 월에 속하지 않는 날짜는 빈 뷰를 반환
+            // 현재 월에 속하지 않는 날짜는 보이지 않도록 처리하되, 클릭 루트는 유지
+            remoteViews.setViewVisibility(R.id.day_cell_root, View.VISIBLE)
             remoteViews.setTextViewText(R.id.day_text, "")
-            remoteViews.setViewVisibility(R.id.day_cell_root, View.INVISIBLE)
+            remoteViews.setTextViewText(R.id.day_text_on_photo, "")
+            remoteViews.setViewVisibility(R.id.day_ring, View.GONE)
+            remoteViews.setViewVisibility(R.id.photo_thumbnail, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text, View.GONE)
+            remoteViews.setFloat(R.id.day_cell_root, "setAlpha", 0f)
             return remoteViews
         }
 
         remoteViews.setViewVisibility(R.id.day_cell_root, View.VISIBLE)
-        remoteViews.setTextViewText(R.id.day_text, date.dayOfMonth.toString())
+        remoteViews.setFloat(R.id.day_cell_root, "setAlpha", 1f)
+        val dayText = date.dayOfMonth.toString()
+        remoteViews.setTextViewText(R.id.day_text, dayText)
+        remoteViews.setTextViewText(R.id.day_text_on_photo, dayText)
 
-        // 오늘 날짜 강조
+        // 오늘 날짜 강조 (링 표시)
         if (date.isEqual(LocalDate.now())) {
-            remoteViews.setInt(R.id.day_text, "setBackgroundResource", R.drawable.widget_today_background)
-            remoteViews.setTextColor(R.id.day_text, Color.BLACK)
+            remoteViews.setViewVisibility(R.id.day_ring, View.VISIBLE)
         } else {
-            remoteViews.setInt(R.id.day_text, "setBackgroundResource", android.R.color.transparent)
-            // 테마에 맞는 기본 텍스트 색상 적용 필요
-            remoteViews.setTextColor(R.id.day_text, Color.GRAY)
+            remoteViews.setViewVisibility(R.id.day_ring, View.GONE)
         }
 
         // 사진이 있는 경우 썸네일 표시
@@ -170,19 +187,43 @@ class CalendarRemoteViewsFactory(
         if (photoBitmap != null) {
             remoteViews.setImageViewBitmap(R.id.photo_thumbnail, photoBitmap)
             remoteViews.setViewVisibility(R.id.photo_thumbnail, View.VISIBLE)
-            // 사진이 있으면 날짜 텍스트를 흰색으로 변경하여 가독성 확보
-            remoteViews.setTextColor(R.id.day_text, Color.WHITE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.VISIBLE)
+            remoteViews.setViewVisibility(R.id.day_text, View.GONE)
         } else {
             remoteViews.setViewVisibility(R.id.photo_thumbnail, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text, View.VISIBLE)
+            val textColor = when (date.dayOfWeek) {
+                java.time.DayOfWeek.SUNDAY -> Color.parseColor("#E53935")
+                java.time.DayOfWeek.SATURDAY -> Color.parseColor("#1E88E5")
+                else -> Color.parseColor("#222222")
+            }
+            remoteViews.setTextColor(R.id.day_text, textColor)
         }
 
         // 날짜 클릭 시 앱 실행을 위한 Intent 설정
         val fillInIntent = Intent().apply {
+            action = Intent.ACTION_VIEW
+            data = android.net.Uri.parse("app://picday.co/diary/${date}")
             putExtra("start_date", date.toString())
         }
         remoteViews.setOnClickFillInIntent(R.id.day_cell_root, fillInIntent)
 
         return remoteViews
+    }
+
+    private fun loadWidgetMonth(): YearMonth {
+        val prefs = context.getSharedPreferences(
+            CalendarWidgetProvider.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val key = if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            "widget_month_global"
+        } else {
+            "${CalendarWidgetProvider.WIDGET_MONTH_PREFIX}$appWidgetId"
+        }
+        val stored = prefs.getString(key, null) ?: return YearMonth.now()
+        return runCatching { YearMonth.parse(stored) }.getOrElse { YearMonth.now() }
     }
 
     private fun Bitmap.toCircularBitmap(): Bitmap {
