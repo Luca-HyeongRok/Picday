@@ -6,7 +6,7 @@ import javax.inject.Inject
 class DeleteDiaryUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(diaryId: String) {
+    suspend operator fun invoke(diaryId: String) {
         repository.deleteDiary(diaryId)
     }
 }

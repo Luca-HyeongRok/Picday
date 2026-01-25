@@ -6,16 +6,15 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 interface DiaryRepository {
-    fun getByDate(date: LocalDate): List<Diary>
-    fun getDiaryById(diaryId: String): Diary?
-    fun addDiaryForDate(date: LocalDate, title: String?, content: String)
-    fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>)
-    fun updateDiary(diaryId: String, title: String?, content: String): Boolean
-    fun hasAnyRecord(date: LocalDate): Boolean
-    fun getPhotos(diaryId: String): List<DiaryPhoto>
-    suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto>
-    fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> // 범위 쿼리 추가
+    suspend fun getByDate(date: LocalDate): List<Diary>
+    suspend fun getDiaryById(diaryId: String): Diary?
+    suspend fun addDiaryForDate(date: LocalDate, title: String?, content: String)
+    suspend fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>)
+    suspend fun updateDiary(diaryId: String, title: String?, content: String): Boolean
+    suspend fun hasAnyRecord(date: LocalDate): Boolean
+    suspend fun getPhotos(diaryId: String): List<DiaryPhoto>
+    suspend fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> // 범위 쿼리 추가
     fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>>
-    fun replacePhotos(diaryId: String, photoUris: List<String>)
-    fun deleteDiary(diaryId: String)
+    suspend fun replacePhotos(diaryId: String, photoUris: List<String>)
+    suspend fun deleteDiary(diaryId: String)
 }

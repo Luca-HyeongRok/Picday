@@ -7,7 +7,7 @@ import javax.inject.Inject
 class HasAnyRecordUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(date: LocalDate): Boolean {
+    suspend operator fun invoke(date: LocalDate): Boolean {
         return repository.hasAnyRecord(date)
     }
 }

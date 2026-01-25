@@ -58,7 +58,7 @@ class DiaryViewModel @Inject constructor(
         updateUiForDate(next)
     }
 
-    fun hasAnyRecord(date: LocalDate): Boolean {
+    suspend fun hasAnyRecord(date: LocalDate): Boolean {
         return hasAnyRecordUseCase(date)
     }
 

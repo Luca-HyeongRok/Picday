@@ -6,7 +6,7 @@ import javax.inject.Inject
 class UpdateDiaryUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(diaryId: String, title: String?, content: String): Boolean {
+    suspend operator fun invoke(diaryId: String, title: String?, content: String): Boolean {
         return repository.updateDiary(diaryId, title, content)
     }
 }

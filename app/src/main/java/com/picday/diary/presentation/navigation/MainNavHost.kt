@@ -37,20 +37,26 @@ fun MainNavHost(
          * -------------------------------- */
         composable(Screen.Calendar.route) {
             val diaryViewModel: DiaryViewModel = hiltViewModel()
+            var pendingNavigateDate by remember { mutableStateOf<LocalDate?>(null) }
+
+            LaunchedEffect(pendingNavigateDate) {
+                val date = pendingNavigateDate ?: return@LaunchedEffect
+                val mode = if (diaryViewModel.hasAnyRecord(date)) {
+                    WriteMode.VIEW
+                } else {
+                    WriteMode.ADD
+                }
+
+                navController.navigate(
+                    Screen.Write.createRoute(date, mode)
+                )
+                pendingNavigateDate = null
+            }
 
             CalendarScreen(
                 onDateSelected = { date ->
                     sharedViewModel.updateSelectedDate(date)
-
-                    val mode = if (diaryViewModel.hasAnyRecord(date)) {
-                        WriteMode.VIEW
-                    } else {
-                        WriteMode.ADD
-                    }
-
-                    navController.navigate(
-                        Screen.Write.createRoute(date, mode)
-                    )
+                    pendingNavigateDate = date
                 }
             )
         }

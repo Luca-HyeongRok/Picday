@@ -7,7 +7,7 @@ import javax.inject.Inject
 class AddDiaryForDateUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(
+    suspend operator fun invoke(
         date: LocalDate,
         title: String?,
         content: String,

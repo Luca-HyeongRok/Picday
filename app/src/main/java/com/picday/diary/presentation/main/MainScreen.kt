@@ -15,9 +15,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +60,7 @@ fun MainScreen(deepLinkUri: String? = null) {
         val currentDestination = backStack.last()
         val isWriteMode = currentDestination is MainDestination.Write
         val selectedDate by sharedViewModel.selectedDate.collectAsState()
+        var pendingNavigateDate by remember { mutableStateOf<LocalDate?>(null) }
         // pendingEditDiaryId는 NavigationRoot에서 관리되므로 여기서는 필요 없습니다.
 
         Scaffold(
@@ -157,17 +161,21 @@ fun MainScreen(deepLinkUri: String? = null) {
                     entry<MainDestination.Calendar> {
                         val diaryViewModel: DiaryViewModel = hiltViewModel()
 
+                        LaunchedEffect(pendingNavigateDate) {
+                            val date = pendingNavigateDate ?: return@LaunchedEffect
+                            val mode = if (diaryViewModel.hasAnyRecord(date)) {
+                                WriteMode.VIEW
+                            } else {
+                                WriteMode.ADD
+                            }
+                            onNavigate(MainNavEvent.CalendarDateSelected(date, mode))
+                            pendingNavigateDate = null
+                        }
+
                         CalendarScreen(
                             onDateSelected = { date ->
                                 sharedViewModel.updateSelectedDate(date)
-
-                                val mode = if (diaryViewModel.hasAnyRecord(date)) {
-                                    WriteMode.VIEW
-                                } else {
-                                    WriteMode.ADD
-                                }
-
-                                onNavigate(MainNavEvent.CalendarDateSelected(date, mode))
+                                pendingNavigateDate = date
                             }
                         )
                     }

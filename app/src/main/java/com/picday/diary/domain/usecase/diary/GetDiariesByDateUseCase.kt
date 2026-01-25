@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetDiariesByDateUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(date: LocalDate): List<Diary> {
+    suspend operator fun invoke(date: LocalDate): List<Diary> {
         return repository.getByDate(date)
     }
 }

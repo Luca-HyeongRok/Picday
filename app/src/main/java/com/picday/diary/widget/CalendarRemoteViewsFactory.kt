@@ -116,7 +116,7 @@ class CalendarRemoteViewsFactory(
                 val coverKey = stringPreferencesKey("cover_$date")
                 val coverUri = preferences?.get(coverKey)
                 val fallbackUri = if (coverUri == null) {
-                    diaryRepository.getPhotosSuspend(representativeDiary.id).firstOrNull()?.uri
+                    diaryRepository.getPhotos(representativeDiary.id).firstOrNull()?.uri
                 } else {
                     null
                 }
