@@ -124,7 +124,9 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val views = RemoteViews(context.packageName, R.layout.widget_calendar_main)
+        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val layoutId = resolveMainLayout(options)
+        val views = RemoteViews(context.packageName, layoutId)
 
         // 월/연도 텍스트 설정
         val month = loadWidgetMonth(context, appWidgetId).atDay(1)
@@ -278,6 +280,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         private const val ACTION_PREV_MONTH = "com.picday.diary.widget.ACTION_PREV_MONTH"
         private const val ACTION_NEXT_MONTH = "com.picday.diary.widget.ACTION_NEXT_MONTH"
         private const val WIDGET_MONTH_PREFIX = "widget_month_"
+        private const val MIN_SIZE_5X5_DP = 320
         fun updateAll(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = android.content.ComponentName(context, CalendarWidgetProvider::class.java)
@@ -289,6 +292,16 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 }
                 context.sendBroadcast(intent)
             }
+        }
+    }
+
+    private fun resolveMainLayout(options: Bundle): Int {
+        val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+        return if (minWidth >= MIN_SIZE_5X5_DP && minHeight >= MIN_SIZE_5X5_DP) {
+            R.layout.widget_calendar_main_5x5
+        } else {
+            R.layout.widget_calendar_main
         }
     }
 
