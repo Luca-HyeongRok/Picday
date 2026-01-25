@@ -191,10 +191,11 @@ class CalendarWidgetProvider : AppWidgetProvider() {
 
         // GridView 아이템 클릭 시 사용할 PendingIntent 템플릿 설정
         val clickIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val clickPendingIntent = PendingIntent.getActivity(
-            context, 0, clickIntent,
+            context, appWidgetId, clickIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
         views.setPendingIntentTemplate(R.id.calendar_grid, clickPendingIntent)

@@ -112,15 +112,26 @@ class CalendarRemoteViewsFactory(
         val photosByDate = diariesInMonth
             .groupBy { it.date }
             .mapNotNull { (date, diaries) ->
-                val representativeDiary = diaries.maxByOrNull { it.createdAt } ?: return@mapNotNull null
                 val coverKey = stringPreferencesKey("cover_$date")
                 val coverUri = preferences?.get(coverKey)
                 val fallbackUri = if (coverUri == null) {
-                    diaryRepository.getPhotos(representativeDiary.id).firstOrNull()?.uri
+                    var firstUri: String? = null
+                    for (diary in diaries) {
+                        val uri = diaryRepository.getPhotos(diary.id).firstOrNull()?.uri
+                        if (uri != null) {
+                            firstUri = uri
+                            break
+                        }
+                    }
+                    firstUri
                 } else {
                     null
                 }
                 val selectedUri = coverUri ?: fallbackUri
+                Log.d(
+                    "WidgetPhoto",
+                    "date=$date coverUri=$coverUri fallbackUri=$fallbackUri selectedUri=$selectedUri"
+                )
                 selectedUri?.let { uri -> date to uri }
             }
             .toMap()
@@ -136,6 +147,14 @@ class CalendarRemoteViewsFactory(
                 (result.image as? BitmapImage)?.bitmap?.let {
                     bitmaps[date] = it.toCircularBitmap()
                 }
+                if (bitmaps[date] == null) {
+                    Log.w("WidgetPhoto", "bitmap null date=$date uri=$uri")
+                }
+            } else {
+                Log.w(
+                    "WidgetPhoto",
+                    "load failed date=$date uri=$uri result=${result::class.simpleName}"
+                )
             }
         }
         photoBitmaps = bitmaps
@@ -146,13 +165,20 @@ class CalendarRemoteViewsFactory(
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_calendar_day)
 
         if (date == null) {
-            // 현재 월에 속하지 않는 날짜는 빈 뷰를 반환
+            // 현재 월에 속하지 않는 날짜는 보이지 않도록 처리하되, 클릭 루트는 유지
+            remoteViews.setViewVisibility(R.id.day_cell_root, View.VISIBLE)
             remoteViews.setTextViewText(R.id.day_text, "")
-            remoteViews.setViewVisibility(R.id.day_cell_root, View.INVISIBLE)
+            remoteViews.setTextViewText(R.id.day_text_on_photo, "")
+            remoteViews.setViewVisibility(R.id.day_ring, View.GONE)
+            remoteViews.setViewVisibility(R.id.photo_thumbnail, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text_on_photo, View.GONE)
+            remoteViews.setViewVisibility(R.id.day_text, View.GONE)
+            remoteViews.setFloat(R.id.day_cell_root, "setAlpha", 0f)
             return remoteViews
         }
 
         remoteViews.setViewVisibility(R.id.day_cell_root, View.VISIBLE)
+        remoteViews.setFloat(R.id.day_cell_root, "setAlpha", 1f)
         val dayText = date.dayOfMonth.toString()
         remoteViews.setTextViewText(R.id.day_text, dayText)
         remoteViews.setTextViewText(R.id.day_text_on_photo, dayText)
@@ -185,6 +211,8 @@ class CalendarRemoteViewsFactory(
 
         // 날짜 클릭 시 앱 실행을 위한 Intent 설정
         val fillInIntent = Intent().apply {
+            action = Intent.ACTION_VIEW
+            data = android.net.Uri.parse("app://picday.co/diary/${date}")
             putExtra("start_date", date.toString())
         }
         remoteViews.setOnClickFillInIntent(R.id.day_cell_root, fillInIntent)

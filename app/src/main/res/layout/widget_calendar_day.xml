@@ -4,7 +4,9 @@
     android:id="@+id/day_cell_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:minHeight="48dp">
+    android:minHeight="48dp"
+    android:descendantFocusability="blocksDescendants"
+    android:background="@android:color/transparent">
 
     <ImageView
         android:id="@+id/photo_thumbnail"
