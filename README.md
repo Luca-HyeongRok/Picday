@@ -3,29 +3,45 @@
 로그인 없이 사용하는 개인용 캘린더 다이어리 앱입니다.  
 날짜 단위로 기록을 남기고 사진을 함께 보관할 수 있습니다.
 
-<h2>📸 App Screenshots</h2>
+## 📸 App Screenshots
+
 <table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/6e8537f9-02c7-4480-98ab-29907cfd46ad" width="200" alt="Calendar"/>
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/4e1b55af-175b-49d2-8f49-4f5e165a56fe" width="200" alt="Diary"/>
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/093c2779-7e35-451b-be16-1bc9daa79f74" width="200" alt="Detail"/>
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/5afeca62-a828-421b-b978-ebf3dc63c383" width="200" alt="Write"/>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><b>Calendar</b></td>
-    <td align="center"><b>Diary</b></td>
-    <td align="center"><b>Detail</b></td>
-    <td align="center"><b>Write</b></td>
-  </tr>
+<tr>
+<td align="center" valign="top">
+<img src="https://github.com/user-attachments/assets/6e8537f9-02c7-4480-98ab-29907cfd46ad" width="300" alt="Calendar"/>
+</td>
+
+<td align="center" valign="top">
+<img src="https://github.com/user-attachments/assets/72bfbedf-2012-4f17-a68b-722d18a27781" width="300" height="1600" alt="Home Widget"/>
+</td>
+</tr>
+
+<tr>
+<td align="center"><b>Calendar</b></td>
+<td align="center"><b>Home Widget</b></td>
+</tr>
 </table>
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/4e1b55af-175b-49d2-8f49-4f5e165a56fe" width="200" alt="Diary"/>
+</td>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/093c2779-7e35-451b-be16-1bc9daa79f74" width="200" alt="Detail"/>
+</td>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/5afeca62-a828-421b-b978-ebf3dc63c383" width="200" alt="Write"/>
+</td>
+</tr>
+
+<tr>
+<td align="center"><b>Diary</b></td>
+<td align="center"><b>Detail</b></td>
+<td align="center"><b>Write</b></td>
+</tr>
+</table>
+
 
 ## 설계 의도
 - 날짜 기반 기록 앱이므로 **선택 날짜**가 전 화면에서 일관되게 동기화되도록 설계
