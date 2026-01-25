@@ -1,6 +1,7 @@
 package com.picday.diary.presentation.navigation
 
 import android.net.Uri
+import com.picday.diary.core.navigation.AppRoute
 import com.picday.diary.core.navigation.NavEffect
 import com.picday.diary.core.navigation.NavEvent
 import com.picday.diary.core.navigation.WriteMode
@@ -31,10 +32,16 @@ sealed interface MainNavEvent : NavEvent {
 
 // Navigation 부수 효과를 나타내는 sealed interface
 sealed interface MainNavEffect : NavEffect {
+    // 지정한 화면으로 이동 (스택에 push)
+    data class Navigate(val route: AppRoute) : MainNavEffect
+    // 루트를 지정한 화면으로 교체
+    data class ReplaceRoot(val route: AppRoute) : MainNavEffect
     // 현재 화면 하나를 스택에서 제거
-    data object PopOne : MainNavEffect
+    data object Pop : MainNavEffect
     // 스택의 최상위 화면까지 모두 제거
     data object PopToRoot : MainNavEffect
+    // 딥링크로 선택된 날짜 동기화
+    data class UpdateSelectedDate(val date: LocalDate) : MainNavEffect
     // 일기 수정 후 다시 돌아왔을 때 해당 일기 정보를 소비
     data class ConsumeEditDiary(val diaryId: String) : MainNavEffect
 }
@@ -49,19 +56,36 @@ data class NavResult(
 fun reduceMainNav(
     backStack: List<MainDestination>,
     event: MainNavEvent,
-    // 현재 SharedViewModel에서 날짜를 업데이트하는 기능을 주입
-    updateSelectedDate: (LocalDate) -> Unit
 ): NavResult {
     // 백스택이 비어있는 경우 기본 스택을 반환
     if (backStack.isEmpty()) return NavResult(backStack)
 
     return when (event) {
-        is MainNavEvent.BottomTabClick -> NavResult(switchBottomTab(backStack, event.target))
-        is MainNavEvent.CalendarDateSelected ->
-            NavResult(pushWrite(backStack, event.date, event.mode, editDiaryId = null))
-        is MainNavEvent.DiaryWriteClick ->
-            NavResult(pushWrite(backStack, event.date, event.mode, editDiaryId = null))
-        is MainNavEvent.DiaryEditClick ->
+        is MainNavEvent.BottomTabClick -> {
+            val nextBackStack = switchBottomTab(backStack, event.target)
+            val effects = if (nextBackStack == backStack) {
+                emptyList()
+            } else {
+                listOf(MainNavEffect.ReplaceRoot(event.target))
+            }
+            NavResult(nextBackStack, effects)
+        }
+        is MainNavEvent.CalendarDateSelected -> {
+            val destination = MainDestination.Write(event.date.toString(), event.mode.name, null)
+            NavResult(
+                backStack = pushWrite(backStack, event.date, event.mode, editDiaryId = null),
+                effects = listOf(MainNavEffect.Navigate(destination))
+            )
+        }
+        is MainNavEvent.DiaryWriteClick -> {
+            val destination = MainDestination.Write(event.date.toString(), event.mode.name, null)
+            NavResult(
+                backStack = pushWrite(backStack, event.date, event.mode, editDiaryId = null),
+                effects = listOf(MainNavEffect.Navigate(destination))
+            )
+        }
+        is MainNavEvent.DiaryEditClick -> {
+            val destination = MainDestination.Write(event.date.toString(), WriteMode.VIEW.name, event.editDiaryId)
             NavResult(
                 backStack = pushWrite(
                     backStack,
@@ -69,17 +93,34 @@ fun reduceMainNav(
                     WriteMode.VIEW,
                     editDiaryId = event.editDiaryId
                 ),
-                effects = listOf(MainNavEffect.ConsumeEditDiary(event.editDiaryId))
+                effects = listOf(
+                    MainNavEffect.Navigate(destination),
+                    MainNavEffect.ConsumeEditDiary(event.editDiaryId)
+                )
             )
-        is MainNavEvent.WriteAddClick ->
-            NavResult(pushWrite(backStack, event.date, WriteMode.ADD, editDiaryId = null))
-        MainNavEvent.WriteBack ->
-            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
-        MainNavEvent.WriteSaveComplete ->
-            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
-        MainNavEvent.WriteDeleteComplete ->
-            NavResult(backStack = backStack, effects = listOf(MainNavEffect.PopOne))
-
+        }
+        is MainNavEvent.WriteAddClick -> {
+            val destination = MainDestination.Write(event.date.toString(), WriteMode.ADD.name, null)
+            NavResult(
+                backStack = pushWrite(backStack, event.date, WriteMode.ADD, editDiaryId = null),
+                effects = listOf(MainNavEffect.Navigate(destination))
+            )
+        }
+        MainNavEvent.WriteBack -> {
+            val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
+            val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
+            NavResult(backStack = nextBackStack, effects = effects)
+        }
+        MainNavEvent.WriteSaveComplete -> {
+            val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
+            val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
+            NavResult(backStack = nextBackStack, effects = effects)
+        }
+        MainNavEvent.WriteDeleteComplete -> {
+            val nextBackStack = if (backStack.size > 1) backStack.dropLast(1) else backStack
+            val effects = if (backStack.size > 1) listOf(MainNavEffect.Pop) else emptyList()
+            NavResult(backStack = nextBackStack, effects = effects)
+        }
         is MainNavEvent.ProcessDeepLink -> {
             val deepLinkUri = event.deepLinkUri
             if (deepLinkUri == null) {
@@ -97,12 +138,14 @@ fun reduceMainNav(
                         val dateString = path.substringAfter("/diary/")
                         val date = LocalDate.parse(dateString, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
                         
-                        // SharedViewModel에 날짜 업데이트
-                        updateSelectedDate(date)
-
                         // 딥링크 진입 시 항상 [Calendar, Diary] 스택으로 재구성
                         // Diary 화면에서 뒤로가기 시 Calendar 화면이 나타나도록 보장
-                        return NavResult(listOf(MainDestination.Calendar, MainDestination.Diary))
+                        val effects = listOf(
+                            MainNavEffect.UpdateSelectedDate(date),
+                            MainNavEffect.ReplaceRoot(MainDestination.Calendar),
+                            MainNavEffect.Navigate(MainDestination.Diary)
+                        )
+                        return NavResult(listOf(MainDestination.Calendar, MainDestination.Diary), effects)
                     }
                 }
             } catch (e: Exception) {

@@ -37,13 +37,7 @@ fun NavigationRoot(
     val dispatchNav: (MainNavEvent) -> Unit = remember {
         { event ->
             // reduceMainNav 함수를 사용하여 현재 백스택과 이벤트를 기반으로 새로운 상태 계산
-            val result = reduceMainNav(backStack.asMainDestinations(), event) { date ->
-                // SharedViewModel의 updateSelectedDate 함수를 주입하여 사용
-                sharedViewModel.updateSelectedDate(date)
-            }
-            // 계산된 새 백스택으로 실제 백스택 업데이트
-            backStack.clear()
-            backStack.addAll(result.backStack)
+            val result = reduceMainNav(backStack.asMainDestinations(), event)
             // 발생한 부수 효과를 저장하고 버전 업데이트
             pendingEffects = result.effects
             pendingEffectsVersion += 1
@@ -63,7 +57,22 @@ fun NavigationRoot(
 
         pendingEffects.forEach { effect ->
             when (effect) {
-                MainNavEffect.PopOne -> {
+                is MainNavEffect.Navigate -> {
+                    val destination = effect.route
+                    require(destination is MainDestination) {
+                        "NavigationRoot only supports MainDestination. Found: ${destination::class.qualifiedName}"
+                    }
+                    backStack.add(destination)
+                }
+                is MainNavEffect.ReplaceRoot -> {
+                    val destination = effect.route
+                    require(destination is MainDestination) {
+                        "NavigationRoot only supports MainDestination. Found: ${destination::class.qualifiedName}"
+                    }
+                    backStack.clear()
+                    backStack.add(destination)
+                }
+                MainNavEffect.Pop -> {
                     if (backStack.size > 1) { // 스택에 하나 이상의 항목이 있을 때만 팝
                         backStack.removeAt(backStack.lastIndex)
                     }
@@ -73,6 +82,9 @@ fun NavigationRoot(
                     while (backStack.size > 1) {
                         backStack.removeAt(backStack.lastIndex)
                     }
+                }
+                is MainNavEffect.UpdateSelectedDate -> {
+                    sharedViewModel.updateSelectedDate(effect.date)
                 }
                 is MainNavEffect.ConsumeEditDiary -> Unit
             }
