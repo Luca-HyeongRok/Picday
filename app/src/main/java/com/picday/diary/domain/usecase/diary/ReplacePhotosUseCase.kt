@@ -6,7 +6,7 @@ import javax.inject.Inject
 class ReplacePhotosUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(diaryId: String, photoUris: List<String>) {
+    suspend operator fun invoke(diaryId: String, photoUris: List<String>) {
         repository.replacePhotos(diaryId, photoUris)
     }
 }

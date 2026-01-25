@@ -10,6 +10,7 @@ import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
 import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
 import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
 import com.picday.diary.fakes.FakeDiaryRepository
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -47,7 +48,7 @@ class DiaryUseCaseTest {
     }
 
     @Test
-    fun `사진 없이 추가하면 사진이 생성되지 않는다`() {
+    fun `사진 없이 추가하면 사진이 생성되지 않는다`() = runTest {
         val date = LocalDate.of(2024, 1, 1)
         addDiaryForDate(date, "Title", "Content")
 
@@ -57,7 +58,7 @@ class DiaryUseCaseTest {
     }
 
     @Test
-    fun `사진 포함 추가 시 사진이 생성된다`() {
+    fun `사진 포함 추가 시 사진이 생성된다`() = runTest {
         val date = LocalDate.of(2024, 1, 2)
         addDiaryForDate(date, "Title", "Content", listOf("uri1", "uri2"))
 
@@ -68,7 +69,7 @@ class DiaryUseCaseTest {
     }
 
     @Test
-    fun `조회와 업데이트 삭제가 정상 동작해야 한다`() {
+    fun `조회와 업데이트 삭제가 정상 동작해야 한다`() = runTest {
         val date = LocalDate.of(2024, 1, 3)
         addDiaryForDate(date, "Title", "Content", listOf("uri1"))
         val diaryId = getDiariesByDate(date).first().id
@@ -88,7 +89,7 @@ class DiaryUseCaseTest {
     }
 
     @Test
-    fun `기간 조회는 범위 내 기록만 반환한다`() {
+    fun `기간 조회는 범위 내 기록만 반환한다`() = runTest {
         val start = LocalDate.of(2024, 2, 1)
         val end = LocalDate.of(2024, 2, 3)
         addDiaryForDate(start, "D1", "C1")

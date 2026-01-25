@@ -7,7 +7,7 @@ import javax.inject.Inject
 class GetDiaryByIdUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(diaryId: String): Diary? {
+    suspend operator fun invoke(diaryId: String): Diary? {
         return repository.getDiaryById(diaryId)
     }
 }

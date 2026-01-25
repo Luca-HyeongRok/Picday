@@ -6,7 +6,6 @@ import com.picday.diary.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.LocalDate
-import kotlin.collections.iterator
 
 class InMemoryDiaryRepository(
     seedData: List<Diary> = seedDiaryData()
@@ -14,39 +13,35 @@ class InMemoryDiaryRepository(
     private val diaryByDate: MutableMap<LocalDate, MutableList<Diary>> = mutableMapOf()
     private val photosByDiaryId: MutableMap<String, MutableList<DiaryPhoto>> = mutableMapOf()
 
+    init {
+        seedData.forEach { addDiaryInternal(it) }
+    }
+
     override fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>> {
         return flow {
             emit(getDiariesByDateRange(startDate, endDate))
         }
     }
 
-    override suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto> {
-        return getPhotos(diaryId)
-    }
-
-    init {
-        seedData.forEach { addDiaryInternal(it) }
-    }
-
-    override fun getByDate(date: LocalDate): List<Diary> {
+    override suspend fun getByDate(date: LocalDate): List<Diary> {
         return diaryByDate[date]?.toList() ?: emptyList()
     }
 
-    override fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
+    override suspend fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
         return diaryByDate.entries
             .filter { (date, _) -> !date.isBefore(startDate) && !date.isAfter(endDate) }
             .flatMap { it.value }
             .toList()
     }
 
-    override fun getDiaryById(diaryId: String): Diary? {
+    override suspend fun getDiaryById(diaryId: String): Diary? {
         for (diaries in diaryByDate.values) {
             diaries.firstOrNull { it.id == diaryId }?.let { return it }
         }
         return null
     }
 
-    override fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
+    override suspend fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         val diary = Diary(
             id = System.currentTimeMillis().toString(),
             date = date,
@@ -57,7 +52,7 @@ class InMemoryDiaryRepository(
         addDiaryInternal(diary)
     }
 
-    override fun addDiaryForDate(
+    override suspend fun addDiaryForDate(
         date: LocalDate,
         title: String?,
         content: String,
@@ -84,7 +79,7 @@ class InMemoryDiaryRepository(
         }
     }
 
-    override fun updateDiary(diaryId: String, title: String?, content: String): Boolean {
+    override suspend fun updateDiary(diaryId: String, title: String?, content: String): Boolean {
         for ((date, diaries) in diaryByDate) {
             val index = diaries.indexOfFirst { it.id == diaryId }
             if (index >= 0) {
@@ -96,15 +91,15 @@ class InMemoryDiaryRepository(
         return false
     }
 
-    override fun hasAnyRecord(date: LocalDate): Boolean {
+    override suspend fun hasAnyRecord(date: LocalDate): Boolean {
         return diaryByDate[date]?.isNotEmpty() == true
     }
 
-    override fun getPhotos(diaryId: String): List<DiaryPhoto> {
+    override suspend fun getPhotos(diaryId: String): List<DiaryPhoto> {
         return photosByDiaryId[diaryId]?.toList() ?: emptyList()
     }
 
-    override fun replacePhotos(diaryId: String, photoUris: List<String>) {
+    override suspend fun replacePhotos(diaryId: String, photoUris: List<String>) {
         val photos = photoUris.map { uri ->
             DiaryPhoto(
                 id = System.nanoTime().toString(),
@@ -116,7 +111,7 @@ class InMemoryDiaryRepository(
         photosByDiaryId[diaryId] = photos.toMutableList()
     }
 
-    override fun deleteDiary(diaryId: String) {
+    override suspend fun deleteDiary(diaryId: String) {
         val iterator = diaryByDate.entries.iterator()
 
         while (iterator.hasNext()) {

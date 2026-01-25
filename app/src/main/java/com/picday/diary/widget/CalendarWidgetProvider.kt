@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.widget.RemoteViews
 import android.util.Log
 import androidx.core.content.edit
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -133,7 +134,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         val backgroundKey = stringPreferencesKey("calendar_background_uri")
         val backgroundUriString = try {
             context.dataStore.data
-                .map { preferences -> preferences[backgroundKey] }
+                .map { preferences: Preferences -> preferences[backgroundKey] }
                 .first()
         } catch (e: Exception) {
             Log.w("CalendarWidget", "Failed to read background photo from DataStore", e)
@@ -211,7 +212,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         val dateKey = stringPreferencesKey("cover_${today}")
         val coverUriString = try {
             context.dataStore.data
-                .map { preferences -> preferences[dateKey] }
+                .map { preferences: Preferences -> preferences[dateKey] }
                 .first()
         } catch (e: Exception) {
             Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)

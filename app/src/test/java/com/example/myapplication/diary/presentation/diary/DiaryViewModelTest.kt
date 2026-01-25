@@ -11,6 +11,7 @@ import com.picday.diary.domain.usecase.settings.GetDateCoverPhotoUseCase
 import com.picday.diary.domain.usecase.settings.SetDateCoverPhotoUseCase
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -117,6 +118,7 @@ class DiaryViewModelTest {
             while (state.selectedDate != date || state.allPhotosForDate.isEmpty()) {
                 state = awaitItem()
             }
+            advanceUntilIdle()
             assertEquals("uri1", state.allPhotosForDate.firstOrNull())
             assertEquals("uri2", viewModel.coverPhotoByDate.value[date])
         }
@@ -141,7 +143,7 @@ class DiaryViewModelTest {
     }
 
     @Test
-    fun `hasAnyRecord는 기록 존재 여부를 반환해야 한다`() {
+    fun `hasAnyRecord는 기록 존재 여부를 반환해야 한다`() = runTest {
         val dateWithRecord = LocalDate.of(2024, 2, 1)
         val emptyDate = LocalDate.of(2024, 2, 2)
         diaryRepository.addDiaryForDate(dateWithRecord, "Title", "Content")
@@ -154,6 +156,7 @@ class DiaryViewModelTest {
     fun `대표 사진 저장 시 coverPhotoByDate가 갱신되어야 한다`() = runTest {
         val date = LocalDate.of(2024, 3, 1)
         viewModel.saveDateCoverPhoto(date, "uri_saved")
+        advanceUntilIdle()
 
         assertEquals("uri_saved", viewModel.coverPhotoByDate.value[date])
     }

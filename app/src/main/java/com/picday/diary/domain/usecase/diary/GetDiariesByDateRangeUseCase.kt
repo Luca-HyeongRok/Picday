@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetDiariesByDateRangeUseCase @Inject constructor(
     private val repository: DiaryRepository
 ) {
-    operator fun invoke(startDate: LocalDate, endDate: LocalDate): List<Diary> {
+    suspend operator fun invoke(startDate: LocalDate, endDate: LocalDate): List<Diary> {
         return repository.getDiariesByDateRange(startDate, endDate)
     }
 }

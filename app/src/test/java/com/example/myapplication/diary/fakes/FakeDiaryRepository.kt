@@ -13,20 +13,20 @@ class FakeDiaryRepository : DiaryRepository {
     private val photos = mutableListOf<DiaryPhoto>()
     private val diariesFlow = MutableStateFlow<List<Diary>>(emptyList())
 
-    override fun getByDate(date: LocalDate): List<Diary> {
+    override suspend fun getByDate(date: LocalDate): List<Diary> {
         return diaries.filter { it.date == date }
     }
 
-    override fun getDiaryById(diaryId: String): Diary? {
+    override suspend fun getDiaryById(diaryId: String): Diary? {
         return diaries.find { it.id == diaryId }
     }
 
-    override fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
+    override suspend fun addDiaryForDate(date: LocalDate, title: String?, content: String) {
         diaries.add(Diary(UUID.randomUUID().toString(), date, title, content, System.currentTimeMillis()))
         notifyDiaryChanged()
     }
 
-    override fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>) {
+    override suspend fun addDiaryForDate(date: LocalDate, title: String?, content: String, photoUris: List<String>) {
         val diaryId = UUID.randomUUID().toString()
         diaries.add(Diary(diaryId, date, title, content, System.currentTimeMillis()))
         photoUris.forEach { uri ->
@@ -35,7 +35,7 @@ class FakeDiaryRepository : DiaryRepository {
         notifyDiaryChanged()
     }
 
-    override fun updateDiary(diaryId: String, title: String?, content: String): Boolean {
+    override suspend fun updateDiary(diaryId: String, title: String?, content: String): Boolean {
         val index = diaries.indexOfFirst { it.id == diaryId }
         if (index != -1) {
             val old = diaries[index]
@@ -46,19 +46,15 @@ class FakeDiaryRepository : DiaryRepository {
         return false
     }
 
-    override fun hasAnyRecord(date: LocalDate): Boolean {
+    override suspend fun hasAnyRecord(date: LocalDate): Boolean {
         return diaries.any { it.date == date }
     }
 
-    override fun getPhotos(diaryId: String): List<DiaryPhoto> {
+    override suspend fun getPhotos(diaryId: String): List<DiaryPhoto> {
         return photos.filter { it.diaryId == diaryId }
     }
 
-    override suspend fun getPhotosSuspend(diaryId: String): List<DiaryPhoto> {
-        return getPhotos(diaryId)
-    }
-
-    override fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
+    override suspend fun getDiariesByDateRange(startDate: LocalDate, endDate: LocalDate): List<Diary> {
         return diaries.filter { it.date in startDate..endDate }
     }
 
@@ -66,7 +62,7 @@ class FakeDiaryRepository : DiaryRepository {
         return diariesFlow
     }
 
-    override fun replacePhotos(diaryId: String, photoUris: List<String>) {
+    override suspend fun replacePhotos(diaryId: String, photoUris: List<String>) {
         photos.removeAll { it.diaryId == diaryId }
         photoUris.forEach { uri ->
             photos.add(DiaryPhoto(UUID.randomUUID().toString(), diaryId, uri, System.currentTimeMillis()))
@@ -74,7 +70,7 @@ class FakeDiaryRepository : DiaryRepository {
         notifyDiaryChanged()
     }
 
-    override fun deleteDiary(diaryId: String) {
+    override suspend fun deleteDiary(diaryId: String) {
         diaries.removeAll { it.id == diaryId }
         photos.removeAll { it.diaryId == diaryId }
         notifyDiaryChanged()
