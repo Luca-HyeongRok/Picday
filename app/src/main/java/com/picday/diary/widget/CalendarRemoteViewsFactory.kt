@@ -15,6 +15,7 @@ import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.size.Size
 import com.picday.diary.R
 import com.picday.diary.data.diary.database.PicDayDatabase
@@ -50,15 +51,14 @@ class CalendarRemoteViewsFactory(
     // 날짜별 사진 비트맵 맵 (미리 로드하여 사용)
     private var photoBitmaps: Map<LocalDate, Bitmap> = emptyMap()
     private var currentMonth: YearMonth = YearMonth.now()
-    private var widgetYear: Int = currentMonth.year
-    private var widgetMonth: Int = currentMonth.monthValue
 
     override fun onCreate() {
         // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
         val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db").build()
         diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
-        widgetYear = intent.getIntExtra("year", currentMonth.year)
-        widgetMonth = intent.getIntExtra("month", currentMonth.monthValue)
+        val dbPath = context.getDatabasePath("picday.db")
+        Log.d("widget", "db path=${dbPath.absolutePath} exists=${dbPath.exists()}")
+        currentMonth = loadWidgetMonth()
     }
 
     override fun onDataSetChanged() {
@@ -66,9 +66,11 @@ class CalendarRemoteViewsFactory(
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
-                widgetYear = intent.getIntExtra("year", YearMonth.now().year)
-                widgetMonth = intent.getIntExtra("month", YearMonth.now().monthValue)
-                currentMonth = YearMonth.of(widgetYear, widgetMonth)
+                currentMonth = loadWidgetMonth()
+                Log.d(
+                    "widget",
+                    "dataset change appWidgetId=$appWidgetId month=${currentMonth.year}-${currentMonth.monthValue}"
+                )
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }
@@ -100,12 +102,16 @@ class CalendarRemoteViewsFactory(
     private suspend fun fetchDiaryPhotosAndBitmaps() {
         val startDate = currentMonth.atDay(1)
         val endDate = currentMonth.atEndOfMonth()
-        val diariesInMonth = diaryRepository.getDiariesStream(startDate, endDate).first()
+        val diariesInMonth = diaryRepository.getDiariesByDateRange(startDate, endDate)
+        Log.d(
+            "widget",
+            "photos query month=${currentMonth.year}-${currentMonth.monthValue} diaries=${diariesInMonth.size}"
+        )
 
         val preferences = try {
             context.dataStore.data.first()
         } catch (e: Exception) {
-            Log.w("CalendarRemoteViewsFactory", "DataStore read failure (widget)", e)
+            Log.w("widget", "DataStore read failure (widget)", e)
             null
         }
 
@@ -129,8 +135,8 @@ class CalendarRemoteViewsFactory(
                 }
                 val selectedUri = coverUri ?: fallbackUri
                 Log.d(
-                    "WidgetPhoto",
-                    "date=$date coverUri=$coverUri fallbackUri=$fallbackUri selectedUri=$selectedUri"
+                    "widget",
+                    "photo pick date=$date coverUri=$coverUri fallbackUri=$fallbackUri selectedUri=$selectedUri"
                 )
                 selectedUri?.let { uri -> date to uri }
             }
@@ -140,24 +146,27 @@ class CalendarRemoteViewsFactory(
         for ((date, uri) in photosByDate) {
             val request = ImageRequest.Builder(context)
                 .data(uri)
-                .size(Size(100, 100)) // 위젯 썸네일 크기 조절
+                .allowHardware(false) // 위젯에서는 하드웨어 비트맵 사용 불가
+                .size(Size(120, 120)) // 썸네일 크기를 약간 키움
                 .build()
+            
             val result = imageLoader.execute(request)
             if (result is SuccessResult) {
                 (result.image as? BitmapImage)?.bitmap?.let {
+                    // 원형 비트맵으로 변환하여 저장
                     bitmaps[date] = it.toCircularBitmap()
                 }
                 if (bitmaps[date] == null) {
-                    Log.w("WidgetPhoto", "bitmap null date=$date uri=$uri")
+                    Log.w("widget", "bitmap convert fail date=$date uri=$uri")
+                } else {
+                    Log.d("widget", "bitmap load ok date=$date")
                 }
             } else {
-                Log.w(
-                    "WidgetPhoto",
-                    "load failed date=$date uri=$uri result=${result::class.simpleName}"
-                )
+                Log.w("widget", "bitmap load fail date=$date uri=$uri")
             }
         }
         photoBitmaps = bitmaps
+        Log.d("widget", "photos loaded count=${photoBitmaps.size}")
     }
 
     override fun getViewAt(position: Int): RemoteViews {
@@ -218,6 +227,21 @@ class CalendarRemoteViewsFactory(
         remoteViews.setOnClickFillInIntent(R.id.day_cell_root, fillInIntent)
 
         return remoteViews
+    }
+
+    private fun loadWidgetMonth(): YearMonth {
+        val prefs = context.getSharedPreferences(
+            CalendarWidgetProvider.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val key = if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            "widget_month_global"
+        } else {
+            "${CalendarWidgetProvider.WIDGET_MONTH_PREFIX}$appWidgetId"
+        }
+        val stored = prefs.getString(key, null) ?: return YearMonth.now()
+        Log.d("widget", "load month appWidgetId=$appWidgetId key=$key stored=$stored")
+        return runCatching { YearMonth.parse(stored) }.getOrElse { YearMonth.now() }
     }
 
     private fun Bitmap.toCircularBitmap(): Bitmap {
