@@ -1,9 +1,7 @@
 # PicDay
 
-
 로그인 없이 사용하는 개인용 캘린더 다이어리 앱입니다.  
-날짜별 기록을 추가/조회/수정하고 사진을 함께 저장할 수 있습니다.  
-**1차 출시용 기준으로 현재 구현된 기능과 구조를 정리했습니다.**
+날짜 단위로 기록을 남기고 사진을 함께 보관할 수 있습니다.
 
 <h2>📸 App Screenshots</h2>
 <table>
@@ -29,96 +27,83 @@
   </tr>
 </table>
 
-## 주요 기능 (현재 가능한 기능)
-- 캘린더 날짜 선택 → 해당 날짜 기록 보기/작성
-- 작성 화면에서 추가/수정 모드 지원
-- 한 기록에 여러 장의 사진(1:N) 첨부 및 썸네일 미리보기
-- 날짜별 기록 리스트 제공, 최신 기록 강조 표시
+## 설계 의도
+- 날짜 기반 기록 앱이므로 **선택 날짜**가 전 화면에서 일관되게 동기화되도록 설계
+- 여러 진입점(일반 실행/위젯/딥링크)을 **단일 내비게이션 파이프라인**으로 통합
+- 화면 이동과 상태 변경을 **순수 리듀서**로 분리해 예측 가능한 흐름 유지
 
-## 아키텍처 / 패턴
-- 계층 분리: `domain` / `data` / `presentation`
-- Repository 패턴: `DiaryRepository` + `Room/InMemory` 구현체
-- Hilt DI로 Repository 및 ViewModel 주입
-- 단일 `DiaryViewModel`을 Calendar/Diary/Write 화면에서 공유
-- Navigation3 기반 단일 루트 네비게이션
-- 네비게이션 상태 전이를 순수 리듀서로 분리
-- 네비게이션은 단위 테스트로 backStack / effect만 검증 (UI 테스트 제외)
+## 아키텍처 개요
+- 계층 분리: `presentation` / `domain` / `data`
+- `domain`은 **use case 중심**으로 의존성을 정리하고, `data`는 Room/DAO/Repository로 구현
+- Hilt로 ViewModel/Repository/DB 주입
+- DataStore로 위젯 커버/배경 설정 저장
 
-## 전체 구조
+## Navigation 구조 (Navigation3 + Reducer)
+- Navigation3 기반 `NavDisplay` 사용
+- **NavigationRoot**가 모든 이벤트를 받아 reducer(`reduceMainNav`)로 상태를 계산
+- reducer는 `NavigationState`와 `NavEffect`를 분리해 **상태와 부수효과를 분리**
+- 딥링크 진입 시 백스택을 `Calendar → Diary`로 재구성하여 뒤로가기 동작을 일관되게 보장
+
+## Entry Point 통합
+- 일반 실행: `MainActivity` → `NavigationRoot`
+- 위젯 클릭: 위젯 날짜 → `start_date` → 딥링크 변환 → `NavigationRoot`
+- 딥링크: `app://picday.co/diary/{yyyy-MM-dd}` 형식으로 처리
+- 동일 딥링크 반복 호출에도 동작하도록 **timestamp를 덧붙여 이벤트를 강제 갱신**
+
+## 상태 관리
+- 화면 상태는 ViewModel의 `StateFlow`로 관리
+- 선택 날짜는 `SharedViewModel`에서 전역 공유
+- 내비게이션 상태는 reducer가 단일 소스로 관리
+
+## 위젯 설계
+- `CalendarWidgetProvider` + `RemoteViewsService` 구성
+- 월 상태는 SharedPreferences에 저장, 월 변경 시 데이터 갱신
+- 데이터는 **Room DB**에서 직접 조회, 커버 사진은 DataStore 우선 적용
+- 썸네일 로딩은 Coil 사용 (`allowHardware(false)`로 RemoteViews 호환)
+
+## 프로젝트 구조
 ```
-presentation
-├─ calendar
-├─ diary
-│ ├─ write
-│ └─ DiaryViewModel
-├─ navigation
-└─ component
-
-domain
-├─ diary
-│ ├─ Diary
-│ └─ DiaryPhoto
-└─ repository
-
-data
-├─ diary
-│ ├─ entity
-│ ├─ dao
-│ ├─ database
-│ └─ repository
+app/src/main/java/com/picday/diary
+├─ core
+│  └─ navigation
+├─ data
+│  └─ diary
+│     ├─ dao
+│     ├─ database
+│     ├─ entity
+│     └─ repository
+├─ di
+├─ domain
+│  ├─ diary
+│  ├─ repository
+│  └─ usecase
+├─ presentation
+│  ├─ calendar
+│  ├─ common
+│  ├─ diary
+│  ├─ main
+│  ├─ navigation
+│  ├─ theme
+│  └─ write
+└─ widget
 ```
 
-## MVVM 패턴
-- **View**: Compose 화면 (`CalendarScreen`, `DiaryScreen`, `WriteScreen`)
-- **ViewModel**: `DiaryViewModel` (UI 상태 및 사용자 이벤트 처리)
-- **Model**: `Diary`, `DiaryPhoto` (도메인 모델)
-    + Repository + Room(Entity / DAO)
-
-## 데이터 구조
-### 도메인 모델
-- `Diary`
-    - id: String
-    - date: LocalDate
-    - title: String?
-    - content: String
-    - createdAt: Long
-
-- `DiaryPhoto`
-    - id: String
-    - diaryId: String
-    - uri: String
-    - createdAt: Long
-
-### Room 테이블
-- `diary`
-- `diary_photo` (1:N 관계)
-
-## 개발 환경
+## 기술 스택
 | 항목 | 값 |
 | --- | --- |
 | 언어 | Kotlin |
 | UI | Jetpack Compose |
-| DB | Room 2.6.1 |
-| DI | Hilt 2.51.1 |
+| Navigation | Navigation3 |
+| DB | Room |
+| 설정 저장 | DataStore |
+| 이미지 로딩 | Coil |
+| DI | Hilt |
 | minSdk | 24 |
 | targetSdk | 36 |
 | Java | 11 |
 
-## 현재 상태
-- Room 기반 로컬 영속성 저장
-- debug 빌드: InMemory Repository + 시드 데이터
-- release 빌드: Room Repository만 사용
-- WriteScreen에서 다중 사진 추가/수정 및 썸네일 미리보기 지원
-- 카드형 리스트, 둥근 버튼/입력창, 하단 네비게이션 UI 적용
-
-## 향후 계획 (아직 미구현 또는 고도화 예정)
-- 카메라 촬영 기능 추가 및 갤러리 UX 개선
-- 편집 모드 사진 diff 처리 로직 고도화
-- 썸네일 캐싱 등 미디어 성능 최적화
-- 작성/편집 UI 인터랙션 및 에러 처리 보완
-
-## 다음에 할 것들
-1) EDIT 모드 사진 로딩/상태 처리 구조 정리
-2) 사진 삭제 시 사용자 확인 UX 추가
-3) Room 마이그레이션 전략 수립
-4) 작성 플로우 에러 처리 및 빈 상태 UX 개선  
+## 향후 작업 (정리된 TODO)
+- 편집 모드 사진 diff 처리 로직 정리
+- 썸네일 캐싱/리사이징 파이프라인 개선
+- Room 마이그레이션 전략 정의
+- 작성/편집 오류 처리 및 빈 상태 UX 보강
