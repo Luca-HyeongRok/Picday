@@ -56,7 +56,6 @@ fun MainNavHost(
 
             CalendarScreen(
                 onDateSelected = { date ->
-                    sharedViewModel.updateSelectedDate(date)
                     pendingNavigateDate = date
                 }
             )

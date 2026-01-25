@@ -174,7 +174,6 @@ fun MainScreen(deepLinkUri: String? = null) {
 
                         CalendarScreen(
                             onDateSelected = { date ->
-                                sharedViewModel.updateSelectedDate(date)
                                 pendingNavigateDate = date
                             }
                         )
