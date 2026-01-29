@@ -44,7 +44,7 @@ class ObserveMonthlyDiariesUseCase @Inject constructor(
                     // 하지만 이 usecase는 monthlyCoverPhotos를 통해 이미 커버사진을 받고 있으므로
                     // 여기서는 diaries의 photoUris를 사용하여 대체합니다.
                     // 이는 Diary 모델이 coverPhotoUri 필드를 가지고 있다면 더 깔끔하게 처리됩니다.
-                    val uri = diaryRepository.getPhotos(diary.id).firstOrNull()?.uri
+                    val uri = diaryRepository.getPhotos(diary.id).lastOrNull()?.uri
                     if (uri != null) {
                         fallbackUri = uri
                         break
