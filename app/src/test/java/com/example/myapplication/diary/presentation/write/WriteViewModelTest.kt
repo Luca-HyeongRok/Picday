@@ -14,6 +14,7 @@ import com.picday.diary.presentation.write.state.WriteState
 import com.picday.diary.presentation.write.state.WriteUiMode
 import com.picday.diary.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -386,5 +387,162 @@ class WriteViewModelTest {
             val updated = awaitItem()
             assertTrue(updated.isDirty)
         }
+    }
+
+    @Test
+    fun `빈 사진 추가는 상태를 변경하지 않는다`() = runTest {
+        viewModel.onPhotosAdded(emptyList())
+        assertTrue(viewModel.uiState.value.photoItems.isEmpty())
+    }
+
+    @Test
+    fun `사진 클릭 시 우선순위로 이동하고 대표 사진이 갱신된다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val second = viewModel.uiState.value.photoItems[1]
+
+        viewModel.onPhotoClicked(second.id)
+
+        val state = viewModel.uiState.value
+        assertEquals(second.id, state.photoItems.first().id)
+        assertEquals(second.uri, state.selectedCoverPhotoUri)
+    }
+
+    @Test
+    fun `content uri 삭제 시 pendingReleaseUris에 추가되고 중복되지 않는다`() = runTest {
+        viewModel.onPhotosAdded(listOf("content://photo1"))
+        val photoId = viewModel.uiState.value.photoItems.first().id
+
+        viewModel.onPhotoRemoved(photoId)
+        viewModel.onPhotoRemoved(photoId)
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf("content://photo1"), state.pendingReleaseUris)
+        assertNull(state.selectedCoverPhotoUri)
+    }
+
+    @Test
+    fun `getCoverPhotoUri는 선택된 커버가 없으면 첫 유효 사진을 반환한다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val state = viewModel.uiState.value
+        assertEquals(state.photoItems.first().uri, viewModel.getCoverPhotoUri())
+    }
+
+    @Test
+    fun `getCoverPhotoUri는 사진이 없으면 null을 반환한다`() {
+        assertNull(viewModel.getCoverPhotoUri())
+    }
+
+    @Test
+    fun `getRepresentativePhotoUriForExit는 선택된 사진이 유효하지 않으면 첫 사진으로 fallback한다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val second = viewModel.uiState.value.photoItems[1]
+        viewModel.onPhotoClicked(second.id)
+
+        viewModel.onPhotoRemoved(second.id)
+
+        assertEquals("uri1", viewModel.getRepresentativePhotoUriForExit())
+    }
+
+    @Test
+    fun `동일한 사진만 추가하면 상태가 유지된다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1"))
+        viewModel.onPhotosAdded(listOf("uri1"))
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.photoItems.size)
+        assertEquals("uri1", state.photoItems.first().uri)
+    }
+
+    @Test
+    fun `첫 번째 사진을 클릭하면 순서가 유지된다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val first = viewModel.uiState.value.photoItems.first()
+
+        viewModel.onPhotoClicked(first.id)
+
+        val state = viewModel.uiState.value
+        assertEquals(first.id, state.photoItems.first().id)
+    }
+
+    @Test
+    fun `getRepresentativePhotoUriForExit는 선택된 사진이 유효하면 그 값을 반환한다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val second = viewModel.uiState.value.photoItems[1]
+        viewModel.onPhotoClicked(second.id)
+
+        assertEquals("uri2", viewModel.getRepresentativePhotoUriForExit())
+    }
+
+    @Test
+    fun `setMode은 ADD와 VIEW로 정상 초기화된다`() {
+        viewModel.setMode(WriteUiMode.ADD)
+        assertEquals(WriteUiMode.ADD, viewModel.uiState.value.uiMode)
+
+        viewModel.setMode(WriteUiMode.EDIT)
+        assertEquals(WriteUiMode.VIEW, viewModel.uiState.value.uiMode)
+    }
+
+    @Test
+    fun `setMode VIEW는 VIEW 상태를 유지한다`() {
+        viewModel.setMode(WriteUiMode.VIEW)
+        assertEquals(WriteUiMode.VIEW, viewModel.uiState.value.uiMode)
+    }
+
+    @Test
+    fun `VIEW 모드에서 저장은 변경을 만들지 않는다`() = runTest {
+        val date = LocalDate.now()
+        viewModel.onSave(date) { }
+        advanceUntilIdle()
+        assertTrue(diaryRepository.getByDate(date).isEmpty())
+    }
+
+    @Test
+    fun `선택된 커버가 있으면 getCoverPhotoUri는 그 값을 반환한다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1", "uri2"))
+        val second = viewModel.uiState.value.photoItems[1]
+        viewModel.onPhotoClicked(second.id)
+
+        assertEquals("uri2", viewModel.getCoverPhotoUri())
+    }
+
+    @Test
+    fun `content uri가 아니면 pendingReleaseUris에 추가되지 않는다`() = runTest {
+        viewModel.onPhotosAdded(listOf("file://photo1"))
+        val photoId = viewModel.uiState.value.photoItems.first().id
+
+        viewModel.onPhotoRemoved(photoId)
+
+        assertTrue(viewModel.uiState.value.pendingReleaseUris.isEmpty())
+    }
+
+    @Test
+    fun `존재하지 않는 사진을 제거해도 상태가 유지된다`() = runTest {
+        viewModel.onPhotosAdded(listOf("uri1"))
+        viewModel.onPhotoRemoved("missing_id")
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.photoItems.size)
+        assertEquals("uri1", state.photoItems.first().uri)
+    }
+
+    @Test
+    fun `ADD 저장에서 releaseUris가 있으면 콜백이 호출된다`() = runTest {
+        val date = LocalDate.now()
+        viewModel.onAddClicked()
+        viewModel.onPhotosAdded(listOf("content://old", "content://keep"))
+        val removeId = viewModel.uiState.value.photoItems.first { it.uri == "content://old" }.id
+        viewModel.onPhotoRemoved(removeId)
+
+        var releasedUris: List<String>? = null
+        viewModel.onSave(date) { releasedUris = it }
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.uiMode != WriteUiMode.VIEW) {
+                state = awaitItem()
+            }
+        }
+
+        assertEquals(listOf("content://old"), releasedUris)
     }
 }
