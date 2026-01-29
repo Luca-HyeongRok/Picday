@@ -6,7 +6,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 class ObserveMonthlyDiariesUseCase @Inject constructor(
@@ -36,16 +35,18 @@ class ObserveMonthlyDiariesUseCase @Inject constructor(
                 if (coverPhotoMap.containsKey(date)) return@forEach
 
                 // 해당 날짜의 다이어리 중 사진이 있는 마지막 다이어리의 마지막 사진을 대표사진으로 사용
-                val fallbackUri = dailyDiaries.asReversed()
-                    .firstNotNullOfOrNull { diary ->
-                        // 여기서는 DiaryPhotoEntity가 아닌 Diary 모델의 coverPhotoUri를 참조해야 합니다.
-                        // 하지만 이 usecase는 monthlyCoverPhotos를 통해 이미 커버사진을 받고 있으므로
-                        // 여기서는 diaries의 photoUris를 사용하여 대체합니다.
-                        // 이는 Diary 모델이 coverPhotoUri 필드를 가지고 있다면 더 깔끔하게 처리됩니다.
-                        runBlocking { // 이 부분은 Flow에서 suspend 함수 호출 시 주의 필요. Flow의 map 내에서 suspend 호출은 권장되지 않음.
-                            diaryRepository.getPhotos(diary.id).firstOrNull()?.uri
-                        }
+                var fallbackUri: String? = null
+                for (diary in dailyDiaries.asReversed()) {
+                    // 여기서는 DiaryPhotoEntity가 아닌 Diary 모델의 coverPhotoUri를 참조해야 합니다.
+                    // 하지만 이 usecase는 monthlyCoverPhotos를 통해 이미 커버사진을 받고 있으므로
+                    // 여기서는 diaries의 photoUris를 사용하여 대체합니다.
+                    // 이는 Diary 모델이 coverPhotoUri 필드를 가지고 있다면 더 깔끔하게 처리됩니다.
+                    val uri = diaryRepository.getPhotos(diary.id).firstOrNull()?.uri
+                    if (uri != null) {
+                        fallbackUri = uri
+                        break
                     }
+                }
                 
                 if (fallbackUri != null) {
                     coverPhotoMap[date] = fallbackUri

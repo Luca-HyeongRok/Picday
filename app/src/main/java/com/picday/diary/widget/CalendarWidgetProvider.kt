@@ -13,7 +13,6 @@ import android.widget.RemoteViews
 import androidx.core.content.edit
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.room.Room
 import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -21,8 +20,6 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import com.picday.diary.MainActivity
 import com.picday.diary.R
-import com.picday.diary.data.diary.database.PicDayDatabase
-import com.picday.diary.data.diary.repository.RoomDiaryRepository
 import com.picday.diary.data.repository.dataStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -119,11 +116,11 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         month: YearMonth? = null
     ) {
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val layoutId = resolveMainLayout(options)
+        val layoutId = resolveLayout(appWidgetManager, appWidgetId, options)
         if (layoutId == R.layout.widget_calendar_cover) {
             updateCoverWidget(context, appWidgetManager, appWidgetId)
         } else {
-            updateMainCalendarWidget(context, appWidgetManager, appWidgetId, month)
+            updateMainCalendarWidget(context, appWidgetManager, appWidgetId, layoutId, month)
         }
     }
 
@@ -131,10 +128,9 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
+        layoutId: Int,
         specifiedMonth: YearMonth? = null
     ) {
-        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val layoutId = resolveMainLayout(options)
         val views = RemoteViews(context.packageName, layoutId)
 
         // 월/연도 텍스트 설정 (전달된 specifiedMonth가 있으면 즉시 사용)
@@ -218,10 +214,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db")
-            .addMigrations(PicDayDatabase.MIGRATION_1_2)
-            .build()
-        val diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
+        val diaryRepository = WidgetRepositoryProvider.getDiaryRepository(context)
 
         val today = LocalDate.now()
         val formattedDate = today.format(DateTimeFormatter.ofPattern("M.d / E", Locale.getDefault()))
@@ -317,6 +310,18 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         } else {
             R.layout.widget_calendar_main
         }
+    }
+
+    private fun resolveLayout(
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        options: Bundle
+    ): Int {
+        val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+        if (info?.initialLayout == R.layout.widget_calendar_cover) {
+            return R.layout.widget_calendar_cover
+        }
+        return resolveMainLayout(options)
     }
 
     private fun loadWidgetMonth(context: Context, appWidgetId: Int): YearMonth {

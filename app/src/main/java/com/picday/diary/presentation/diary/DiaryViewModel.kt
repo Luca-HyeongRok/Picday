@@ -98,8 +98,8 @@ class DiaryViewModel @Inject constructor(
                 .sortedBy { it.createdAt }
 
             val uiItems = fetchUiItems(domainItems)
-            val sortedPhotos = computeSortedPhotos(date, uiItems)
             val savedCover = getDateCoverPhoto(date).firstOrNull()
+            val sortedPhotos = computeSortedPhotos(uiItems, savedCover)
             val coverForDate = savedCover ?: sortedPhotos.firstOrNull()
 
             _uiState.update { current ->
@@ -127,8 +127,15 @@ class DiaryViewModel @Inject constructor(
         }
     }
 
-    private suspend fun computeSortedPhotos(date: LocalDate, uiItems: List<DiaryUiItem>): List<String> {
-        return uiItems.flatMap { it.photoUris }.distinct()
+    private fun computeSortedPhotos(uiItems: List<DiaryUiItem>, savedCover: String?): List<String> {
+        val photos = uiItems.flatMap { it.photoUris }.distinct()
+        if (savedCover.isNullOrBlank()) {
+            return photos
+        }
+
+        // Ensure saved cover is first without duplication.
+        val withoutCover = photos.filterNot { it == savedCover }
+        return listOf(savedCover) + withoutCover
     }
 
     suspend fun saveDateCoverPhoto(date: LocalDate, uri: String?) {

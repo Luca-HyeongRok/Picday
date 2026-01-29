@@ -1,6 +1,5 @@
 package com.picday.diary.widget
 
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
@@ -9,8 +8,6 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import androidx.room.Room
-// No androidx.datastore imports for cover photos anymore
 import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -18,9 +15,6 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.size.Size
 import com.picday.diary.R
-import com.picday.diary.data.diary.database.PicDayDatabase
-import com.picday.diary.data.diary.repository.RoomDiaryRepository
-// No dataStore import for cover photos. Keep for calendar background if still needed. Wait, dataStore is not used in this file for background. So remove.
 import com.picday.diary.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -38,11 +32,6 @@ class CalendarRemoteViewsFactory(
     private val intent: Intent
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    private val appWidgetId = intent.getIntExtra(
-        AppWidgetManager.EXTRA_APPWIDGET_ID,
-        AppWidgetManager.INVALID_APPWIDGET_ID
-    )
-
     private lateinit var diaryRepository: DiaryRepository
     private val imageLoader = ImageLoader(context)
 
@@ -53,11 +42,6 @@ class CalendarRemoteViewsFactory(
     private var currentMonth: YearMonth = YearMonth.now()
 
     override fun onCreate() {
-        // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
-        val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db")
-            .addMigrations(PicDayDatabase.MIGRATION_1_2)
-            .build()
-        diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
         updateCurrentMonthFromIntent() // Call the new method
     }
 
@@ -67,6 +51,7 @@ class CalendarRemoteViewsFactory(
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
+                diaryRepository = WidgetRepositoryProvider.getDiaryRepository(context)
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }
