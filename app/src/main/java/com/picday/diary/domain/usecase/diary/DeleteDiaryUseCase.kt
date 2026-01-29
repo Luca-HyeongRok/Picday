@@ -1,17 +1,15 @@
 package com.picday.diary.domain.usecase.diary
 
 import com.picday.diary.domain.repository.DiaryRepository
-import com.picday.diary.domain.repository.SettingsRepository
 import javax.inject.Inject
 
 /**
  * 다이어리를 삭제하는 유즈케이스입니다.
- * Room DB의 다이어리 정보와 DataStore의 커버 사진 설정을 모두 삭제하여
+ * DiaryRepository를 통해 다이어리 정보와 커버 사진 설정을 모두 삭제하여
  * 데이터 정합성을 보장합니다.
  */
 class DeleteDiaryUseCase @Inject constructor(
-    private val diaryRepository: DiaryRepository,
-    private val settingsRepository: SettingsRepository
+    private val diaryRepository: DiaryRepository
 ) {
     /**
      * @param diaryId 삭제할 다이어리의 ID
@@ -21,8 +19,8 @@ class DeleteDiaryUseCase @Inject constructor(
         val diaryToDelete = diaryRepository.getDiaryById(diaryId)
 
         if (diaryToDelete != null) {
-            // 2. DataStore에서 해당 날짜의 커버 사진 설정을 제거합니다.
-            settingsRepository.setDateCoverPhotoUri(diaryToDelete.date, null)
+            // 2. DiaryRepository에서 해당 날짜의 커버 사진 설정을 제거합니다.
+            diaryRepository.setDateCoverPhotoUri(diaryToDelete.date, null)
 
             // 3. Room DB에서 다이어리와 관련 사진들을 삭제합니다.
             diaryRepository.deleteDiary(diaryId)

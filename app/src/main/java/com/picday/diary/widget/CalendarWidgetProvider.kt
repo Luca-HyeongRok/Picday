@@ -8,26 +8,26 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.widget.RemoteViews
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.content.edit
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
-import coil3.BitmapImage
 import com.picday.diary.MainActivity
 import com.picday.diary.R
+import com.picday.diary.data.repository.dataStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import com.picday.diary.data.repository.dataStore
+import java.util.*
 
 class CalendarWidgetProvider : AppWidgetProvider() {
 
@@ -115,17 +115,22 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         month: YearMonth? = null
     ) {
-        updateMainCalendarWidget(context, appWidgetManager, appWidgetId, month)
+        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val layoutId = resolveLayout(appWidgetManager, appWidgetId, options)
+        if (layoutId == R.layout.widget_calendar_cover) {
+            updateCoverWidget(context, appWidgetManager, appWidgetId)
+        } else {
+            updateMainCalendarWidget(context, appWidgetManager, appWidgetId, layoutId, month)
+        }
     }
 
     private suspend fun updateMainCalendarWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
+        layoutId: Int,
         specifiedMonth: YearMonth? = null
     ) {
-        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val layoutId = resolveMainLayout(options)
         val views = RemoteViews(context.packageName, layoutId)
 
         // 월/연도 텍스트 설정 (전달된 specifiedMonth가 있으면 즉시 사용)
@@ -209,16 +214,15 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
+        val diaryRepository = WidgetRepositoryProvider.getDiaryRepository(context)
+
         val today = LocalDate.now()
         val formattedDate = today.format(DateTimeFormatter.ofPattern("M.d / E", Locale.getDefault()))
 
-        val dateKey = stringPreferencesKey("cover_${today}")
         val coverUriString = try {
-            context.dataStore.data
-                .map { preferences: Preferences -> preferences[dateKey] }
-                .first()
+            diaryRepository.getDateCoverPhotoUri(today).first()
         } catch (e: Exception) {
-            Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)
+            Log.w("CalendarWidget", "Failed to read cover photo from Repository", e)
             null
         }
 
@@ -306,6 +310,18 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         } else {
             R.layout.widget_calendar_main
         }
+    }
+
+    private fun resolveLayout(
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        options: Bundle
+    ): Int {
+        val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+        if (info?.initialLayout == R.layout.widget_calendar_cover) {
+            return R.layout.widget_calendar_cover
+        }
+        return resolveMainLayout(options)
     }
 
     private fun loadWidgetMonth(context: Context, appWidgetId: Int): YearMonth {

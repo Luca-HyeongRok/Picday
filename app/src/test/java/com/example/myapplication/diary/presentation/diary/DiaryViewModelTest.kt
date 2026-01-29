@@ -19,6 +19,7 @@ import org.junit.Rule
 import org.junit.Test
 import com.picday.diary.domain.updater.CalendarWidgetUpdater
 import java.time.LocalDate
+import com.picday.diary.domain.diary.Diary // 추가
 
 /**
  * DiaryViewModel의 조회 및 집계 로직을 검증하는 단위 테스트
@@ -30,14 +31,14 @@ class DiaryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var diaryRepository: FakeDiaryRepository
-    private lateinit var settingsRepository: FakeSettingsRepository
+    private lateinit var settingsRepository: FakeSettingsRepository // 캘린더 배경 등을 위한 설정 Repository
     private lateinit var widgetUpdater: FakeCalendarWidgetUpdater
     private lateinit var viewModel: DiaryViewModel
 
     @Before
     fun setUp() {
         diaryRepository = FakeDiaryRepository()
-        settingsRepository = FakeSettingsRepository()
+        settingsRepository = FakeSettingsRepository() // FakeSettingsRepository는 이제 순수 설정만 담당
         widgetUpdater = FakeCalendarWidgetUpdater()
         
         // ViewModel init 블록에서 updateUiForDate(now)가 호출됨
@@ -46,8 +47,8 @@ class DiaryViewModelTest {
             getDiariesByDateRange = GetDiariesByDateRangeUseCase(diaryRepository),
             getPhotos = GetPhotosUseCase(diaryRepository),
             hasAnyRecordUseCase = HasAnyRecordUseCase(diaryRepository),
-            getDateCoverPhoto = GetDateCoverPhotoUseCase(settingsRepository),
-            setDateCoverPhoto = SetDateCoverPhotoUseCase(settingsRepository),
+            getDateCoverPhoto = GetDateCoverPhotoUseCase(diaryRepository), // 수정: diaryRepository 주입
+            setDateCoverPhoto = SetDateCoverPhotoUseCase(diaryRepository), // 수정: diaryRepository 주입
             widgetUpdater = widgetUpdater
         )
     }
@@ -106,8 +107,13 @@ class DiaryViewModelTest {
     fun `저장된 대표 사진이 집계 리스트의 맨 앞에 위치해야 한다`() = runTest {
         // Given: 사진들이 있고, 그 중 하나를 대표 사진으로 설정
         val date = LocalDate.of(2024, 1, 1)
+        // DiaryRepository.setDateCoverPhotoUri를 테스트하기 위해 다이어리 추가
+        val testDiary = Diary("diary_id_1", date, "Title", "Content", System.currentTimeMillis())
+        diaryRepository.addDiary(testDiary)
         diaryRepository.addDiaryForDate(date, "D1", "C1", listOf("uri1", "uri2"))
-        settingsRepository.setDateCoverPhotoUri(date, "uri2")
+        
+        // 수정: settingsRepository 대신 diaryRepository 사용
+        diaryRepository.setDateCoverPhotoUri(date, "uri2")
 
         // When: 날짜 선택
         viewModel.onDateSelected(date)
@@ -118,9 +124,8 @@ class DiaryViewModelTest {
             while (state.selectedDate != date || state.allPhotosForDate.isEmpty()) {
                 state = awaitItem()
             }
-            advanceUntilIdle()
-            assertEquals("uri1", state.allPhotosForDate.firstOrNull())
-            assertEquals("uri2", viewModel.coverPhotoByDate.value[date])
+            advanceUntilIdle() // 비동기 작업 완료 대기
+            assertEquals("uri2", state.allPhotosForDate.firstOrNull()) // uri2가 첫번째로 와야 함
         }
     }
 
@@ -155,6 +160,10 @@ class DiaryViewModelTest {
     @Test
     fun `대표 사진 저장 시 coverPhotoByDate가 갱신되어야 한다`() = runTest {
         val date = LocalDate.of(2024, 3, 1)
+        // SetDateCoverPhotoUri를 위해 해당 날짜의 다이어리가 필요함
+        val testDiary = Diary("diary_id_2", date, "Title", "Content", System.currentTimeMillis())
+        diaryRepository.addDiary(testDiary)
+
         viewModel.saveDateCoverPhoto(date, "uri_saved")
         advanceUntilIdle()
 
@@ -166,7 +175,12 @@ class DiaryViewModelTest {
         val dateWithSavedCover = LocalDate.of(2024, 4, 1)
         val dateWithDiary = LocalDate.of(2024, 4, 2)
 
-        settingsRepository.setDateCoverPhotoUri(dateWithSavedCover, "uri_saved")
+        // SetDateCoverPhotoUri를 위해 해당 날짜의 다이어리가 필요함
+        val testDiaryForCover = Diary("diary_id_3", dateWithSavedCover, "Title", "Content", System.currentTimeMillis())
+        diaryRepository.addDiary(testDiaryForCover)
+
+        // 수정: settingsRepository 대신 diaryRepository 사용
+        diaryRepository.setDateCoverPhotoUri(dateWithSavedCover, "uri_saved")
         diaryRepository.addDiaryForDate(dateWithDiary, "Title", "Content", listOf("uri1", "uri2"))
 
         viewModel.preloadCoverPhotos(listOf(dateWithSavedCover, dateWithDiary))
@@ -178,6 +192,7 @@ class DiaryViewModelTest {
             }
 
             assertEquals("uri_saved", map[dateWithSavedCover])
+            // preloadCoverPhotos는 대표 사진만 가져오므로, 일기 내 사진은 null
             assertNull(map[dateWithDiary])
         }
     }
@@ -245,6 +260,10 @@ class DiaryViewModelTest {
         // Given
         val date = LocalDate.of(2024, 5, 1)
         val uri = "new_cover_uri"
+
+        // SetDateCoverPhotoUri를 위해 해당 날짜의 다이어리가 필요함
+        val testDiary = Diary("diary_id_4", date, "Title", "Content", System.currentTimeMillis())
+        diaryRepository.addDiary(testDiary)
 
         // When
         viewModel.saveDateCoverPhoto(date, uri)

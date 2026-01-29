@@ -1,6 +1,5 @@
 package com.picday.diary.widget
 
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
@@ -9,8 +8,6 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import androidx.room.Room
-import androidx.datastore.preferences.core.stringPreferencesKey
 import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
@@ -18,9 +15,6 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.size.Size
 import com.picday.diary.R
-import com.picday.diary.data.diary.database.PicDayDatabase
-import com.picday.diary.data.diary.repository.RoomDiaryRepository
-import com.picday.diary.data.repository.dataStore
 import com.picday.diary.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -38,11 +32,6 @@ class CalendarRemoteViewsFactory(
     private val intent: Intent
 ) : RemoteViewsService.RemoteViewsFactory {
 
-    private val appWidgetId = intent.getIntExtra(
-        AppWidgetManager.EXTRA_APPWIDGET_ID,
-        AppWidgetManager.INVALID_APPWIDGET_ID
-    )
-
     private lateinit var diaryRepository: DiaryRepository
     private val imageLoader = ImageLoader(context)
 
@@ -53,18 +42,16 @@ class CalendarRemoteViewsFactory(
     private var currentMonth: YearMonth = YearMonth.now()
 
     override fun onCreate() {
-        // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
-        val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db").build()
-        diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
-        updateCurrentMonthFromIntent()
+        updateCurrentMonthFromIntent() // Call the new method
     }
 
     override fun onDataSetChanged() {
-        updateCurrentMonthFromIntent()
+        updateCurrentMonthFromIntent() // Call the new method
         // 이 메소드는 동기적으로 실행되어야 하며, 시간이 오래 걸리는 작업은 여기서 수행합니다.
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
+                diaryRepository = WidgetRepositoryProvider.getDiaryRepository(context)
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }
@@ -108,18 +95,13 @@ class CalendarRemoteViewsFactory(
         val endDate = currentMonth.atEndOfMonth()
         val diariesInMonth = diaryRepository.getDiariesByDateRange(startDate, endDate)
 
-        val preferences = try {
-            context.dataStore.data.first()
-        } catch (e: Exception) {
-            Log.w("widget", "DataStore read failure (widget)", e)
-            null
-        }
-
         val photosByDate = diariesInMonth
             .groupBy { it.date }
             .mapNotNull { (date, diaries) ->
-                val coverKey = stringPreferencesKey("cover_$date")
-                val coverUri = preferences?.get(coverKey)
+                // 이제 DiaryRepository에서 직접 커버 사진 URI를 가져옵니다.
+                val coverUri = diaryRepository.getDateCoverPhotoUri(date).first() // Use diaryRepository
+
+                // 커버 사진이 없을 경우, 해당 날짜의 첫 번째 사진을 fallback으로 사용합니다.
                 val fallbackUri = if (coverUri == null) {
                     var firstUri: String? = null
                     for (diary in diaries) {
@@ -145,7 +127,7 @@ class CalendarRemoteViewsFactory(
                 .allowHardware(false) // 위젯에서는 하드웨어 비트맵 사용 불가
                 .size(Size(120, 120)) // 썸네일 크기를 약간 키움
                 .build()
-            
+
             val result = imageLoader.execute(request)
             if (result is SuccessResult) {
                 (result.image as? BitmapImage)?.bitmap?.let {

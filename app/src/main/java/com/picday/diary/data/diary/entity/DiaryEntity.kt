@@ -11,7 +11,8 @@ data class DiaryEntity(
     val dateEpochDay: Long,
     val title: String?,
     val content: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val coverPhotoUri: String? = null
 )
 
 // LocalDate는 타임존 영향을 받지 않는 epochDay(Long)로 저장한다.
@@ -21,7 +22,8 @@ fun DiaryEntity.toDomain(): Diary {
         date = LocalDate.ofEpochDay(dateEpochDay),
         title = title,
         content = content,
-        createdAt = createdAt
+        createdAt = createdAt,
+        coverPhotoUri = coverPhotoUri
     )
 }
 
@@ -31,6 +33,7 @@ fun Diary.toEntity(): DiaryEntity {
         dateEpochDay = date.toEpochDay(),
         title = title,
         content = content,
-        createdAt = createdAt
+        createdAt = createdAt,
+        coverPhotoUri = coverPhotoUri
     )
 }
