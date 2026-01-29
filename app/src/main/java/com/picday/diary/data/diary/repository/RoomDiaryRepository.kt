@@ -10,8 +10,10 @@ import com.picday.diary.data.diary.entity.toEntity
 import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.DiaryPhoto
 import com.picday.diary.domain.repository.DiaryRepository
-import java.time.LocalDate
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.YearMonth
 
 /**
  * [DiaryRepository] 인터페이스의 Room 데이터베이스 구현체입니다.
@@ -176,6 +178,51 @@ class RoomDiaryRepository(
         database.withTransaction {
             diaryPhotoDao.deleteByDiaryId(diaryId) // 관련 사진 삭제
             diaryDao.deleteById(diaryId) // 다이어리 삭제
+        }
+    }
+
+    override fun getDateCoverPhotoUri(date: LocalDate): Flow<String?> {
+        return getDiariesStream(date, date).map { diaries ->
+            diaries.firstNotNullOfOrNull { it.coverPhotoUri }
+        }
+    }
+
+    /**
+     * 특정 날짜의 대표 커버 사진을 설정합니다.
+     * 정책: 하루에 하나의 커버 사진만 허용됩니다.
+     * 이 날짜의 가장 최근 다이어리에 커버 사진 URI를 설정합니다.
+     */
+    override suspend fun setDateCoverPhotoUri(date: LocalDate, uri: String?) {
+        val diariesOnDate = getByDate(date)
+        if (diariesOnDate.isNotEmpty()) {
+            // 가장 최근에 생성된 다이어리를 커버로 설정할 대상으로 지정
+            val targetDiary = diariesOnDate.maxByOrNull { it.createdAt } ?: return
+
+            database.withTransaction {
+                // 해당 날짜의 모든 다이어리에서 커버 사진 설정을 우선 제거
+                diariesOnDate.forEach { diary ->
+                    if (diary.coverPhotoUri != null) {
+                        diaryDao.setCoverPhotoUri(diary.id, null)
+                    }
+                }
+                // 대상 다이어리에만 새 커버 사진 URI를 설정
+                if (uri != null) {
+                    diaryDao.setCoverPhotoUri(targetDiary.id, uri)
+                }
+            }
+        }
+    }
+
+    /**
+     * 특정 월의 모든 커버 사진들을 관찰합니다. Room을 사용하여 효율적으로 조회합니다.
+     */
+    override fun observeMonthlyCoverPhotos(yearMonth: YearMonth): Flow<Map<LocalDate, String>> {
+        val start = yearMonth.atDay(1)
+        val end = yearMonth.atEndOfMonth()
+        return getDiariesStream(start, end).map { diaries ->
+            diaries
+                .filter { it.coverPhotoUri != null }
+                .associate { it.date to it.coverPhotoUri!! }
         }
     }
 }

@@ -8,7 +8,6 @@ import com.picday.diary.domain.usecase.diary.GetDiaryByIdUseCase
 import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
 import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
 import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
-import com.picday.diary.fakes.FakeSettingsRepository
 import com.picday.diary.presentation.write.photo.WritePhotoItem
 import com.picday.diary.presentation.write.photo.WritePhotoState
 import com.picday.diary.presentation.write.state.WriteState
@@ -32,20 +31,18 @@ class WriteViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var diaryRepository: FakeDiaryRepository
-    private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var viewModel: WriteViewModel
 
     @Before
     fun setUp() {
         diaryRepository = FakeDiaryRepository()
-        settingsRepository = FakeSettingsRepository()
         viewModel = WriteViewModel(
             addDiaryForDate = AddDiaryForDateUseCase(diaryRepository),
             updateDiary = UpdateDiaryUseCase(diaryRepository),
             replacePhotos = ReplacePhotosUseCase(diaryRepository),
             getDiaryById = GetDiaryByIdUseCase(diaryRepository),
             getPhotos = GetPhotosUseCase(diaryRepository),
-            deleteDiary = DeleteDiaryUseCase(diaryRepository, settingsRepository)
+            deleteDiary = DeleteDiaryUseCase(diaryRepository)
         )
     }
 

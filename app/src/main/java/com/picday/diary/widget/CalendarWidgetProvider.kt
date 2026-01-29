@@ -8,26 +8,29 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.widget.RemoteViews
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.content.edit
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.room.Room
+import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
-import coil3.BitmapImage
 import com.picday.diary.MainActivity
 import com.picday.diary.R
+import com.picday.diary.data.diary.database.PicDayDatabase
+import com.picday.diary.data.diary.repository.RoomDiaryRepository
+import com.picday.diary.data.repository.dataStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import com.picday.diary.data.repository.dataStore
+import java.util.*
 
 class CalendarWidgetProvider : AppWidgetProvider() {
 
@@ -115,7 +118,13 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         month: YearMonth? = null
     ) {
-        updateMainCalendarWidget(context, appWidgetManager, appWidgetId, month)
+        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val layoutId = resolveMainLayout(options)
+        if (layoutId == R.layout.widget_calendar_cover) {
+            updateCoverWidget(context, appWidgetManager, appWidgetId)
+        } else {
+            updateMainCalendarWidget(context, appWidgetManager, appWidgetId, month)
+        }
     }
 
     private suspend fun updateMainCalendarWidget(
@@ -209,16 +218,18 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
+        val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db")
+            .addMigrations(PicDayDatabase.MIGRATION_1_2)
+            .build()
+        val diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
+
         val today = LocalDate.now()
         val formattedDate = today.format(DateTimeFormatter.ofPattern("M.d / E", Locale.getDefault()))
 
-        val dateKey = stringPreferencesKey("cover_${today}")
         val coverUriString = try {
-            context.dataStore.data
-                .map { preferences: Preferences -> preferences[dateKey] }
-                .first()
+            diaryRepository.getDateCoverPhotoUri(today).first()
         } catch (e: Exception) {
-            Log.w("CalendarWidget", "Failed to read cover photo from DataStore", e)
+            Log.w("CalendarWidget", "Failed to read cover photo from Repository", e)
             null
         }
 

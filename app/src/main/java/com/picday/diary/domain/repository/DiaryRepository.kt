@@ -4,6 +4,7 @@ import com.picday.diary.domain.diary.Diary
 import com.picday.diary.domain.diary.DiaryPhoto
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.YearMonth
 
 interface DiaryRepository {
     suspend fun getByDate(date: LocalDate): List<Diary>
@@ -17,4 +18,9 @@ interface DiaryRepository {
     fun getDiariesStream(startDate: LocalDate, endDate: LocalDate): Flow<List<Diary>>
     suspend fun replacePhotos(diaryId: String, photoUris: List<String>)
     suspend fun deleteDiary(diaryId: String)
+
+    // Cover Photo methods moved from SettingsRepository
+    fun getDateCoverPhotoUri(date: LocalDate): Flow<String?>
+    suspend fun setDateCoverPhotoUri(date: LocalDate, uri: String?)
+    fun observeMonthlyCoverPhotos(yearMonth: YearMonth): Flow<Map<LocalDate, String>>
 }
