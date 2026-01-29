@@ -56,21 +56,31 @@ class CalendarRemoteViewsFactory(
         // 위젯은 Hilt DI를 직접 사용할 수 없으므로, Repository를 수동으로 생성합니다.
         val db = Room.databaseBuilder(context, PicDayDatabase::class.java, "picday.db").build()
         diaryRepository = RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
-        currentMonth = loadWidgetMonth()
+        updateCurrentMonthFromIntent()
     }
 
     override fun onDataSetChanged() {
+        updateCurrentMonthFromIntent()
         // 이 메소드는 동기적으로 실행되어야 하며, 시간이 오래 걸리는 작업은 여기서 수행합니다.
         val identity = Binder.clearCallingIdentity()
         try {
             runBlocking {
-                currentMonth = loadWidgetMonth()
                 populateCalendarDays()
                 fetchDiaryPhotosAndBitmaps()
             }
         } finally {
             Binder.restoreCallingIdentity(identity)
         }
+    }
+
+    /**
+     * Provider로부터 받은 Intent에서 월 정보를 파싱하여 currentMonth를 업데이트합니다.
+     * 이 방법은 SharedPreferences를 다시 조회하는 대신, Provider가 전달한 정확한 상태를 사용하도록 보장합니다.
+     */
+    private fun updateCurrentMonthFromIntent() {
+        currentMonth = intent.data?.lastPathSegment?.let { monthString ->
+            runCatching { YearMonth.parse(monthString) }.getOrNull()
+        } ?: YearMonth.now()
     }
 
     private suspend fun populateCalendarDays() {
@@ -210,20 +220,6 @@ class CalendarRemoteViewsFactory(
         remoteViews.setOnClickFillInIntent(R.id.day_cell_root, fillInIntent)
 
         return remoteViews
-    }
-
-    private fun loadWidgetMonth(): YearMonth {
-        val prefs = context.getSharedPreferences(
-            CalendarWidgetProvider.PREFS_NAME,
-            Context.MODE_PRIVATE
-        )
-        val key = if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            "widget_month_global"
-        } else {
-            "${CalendarWidgetProvider.WIDGET_MONTH_PREFIX}$appWidgetId"
-        }
-        val stored = prefs.getString(key, null) ?: return YearMonth.now()
-        return runCatching { YearMonth.parse(stored) }.getOrElse { YearMonth.now() }
     }
 
     private fun Bitmap.toCircularBitmap(): Bitmap {
