@@ -31,6 +31,9 @@ interface DiaryDao {
     @Query("UPDATE diary SET title = :title, content = :content WHERE id = :id")
     suspend fun updateDiary(id: String, title: String?, content: String): Int
 
+    @Query("UPDATE diary SET coverPhotoUri = :uri WHERE id = :id")
+    suspend fun setCoverPhotoUri(id: String, uri: String?)
+
     @Query("SELECT EXISTS(SELECT 1 FROM diary WHERE dateEpochDay = :dateEpochDay)")
     suspend fun existsByDate(dateEpochDay: Long): Boolean
 

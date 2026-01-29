@@ -6,9 +6,4 @@ import java.time.LocalDate
 interface SettingsRepository {
     val calendarBackgroundUri: Flow<String?>
     suspend fun setCalendarBackgroundUri(uri: String?)
-    
-    fun getDateCoverPhotoUri(date: LocalDate): Flow<String?>
-    suspend fun setDateCoverPhotoUri(date: LocalDate, uri: String?)
-
-    fun observeMonthlyCoverPhotos(yearMonth: java.time.YearMonth): Flow<Map<LocalDate, String>>
 }

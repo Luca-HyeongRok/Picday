@@ -27,7 +27,9 @@ object DiaryModule {
             context,
             PicDayDatabase::class.java,
             "picday.db"
-        ).build()
+        )
+            .addMigrations(PicDayDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

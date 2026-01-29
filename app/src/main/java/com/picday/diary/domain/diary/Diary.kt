@@ -7,7 +7,8 @@ data class Diary(
     val date: LocalDate,
     val title: String?,
     val content: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val coverPhotoUri: String? = null
 ) {
     val previewContent: String
         get() = content

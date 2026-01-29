@@ -10,7 +10,6 @@ import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
 import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
 import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
 import com.picday.diary.fakes.FakeDiaryRepository
-import com.picday.diary.fakes.FakeSettingsRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,7 +23,6 @@ import java.time.LocalDate
 class DiaryUseCaseTest {
 
     private lateinit var diaryRepository: FakeDiaryRepository
-    private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var addDiaryForDate: AddDiaryForDateUseCase
     private lateinit var updateDiary: UpdateDiaryUseCase
     private lateinit var replacePhotos: ReplacePhotosUseCase
@@ -38,11 +36,10 @@ class DiaryUseCaseTest {
     @Before
     fun setUp() {
         diaryRepository = FakeDiaryRepository()
-        settingsRepository = FakeSettingsRepository()
         addDiaryForDate = AddDiaryForDateUseCase(diaryRepository)
         updateDiary = UpdateDiaryUseCase(diaryRepository)
         replacePhotos = ReplacePhotosUseCase(diaryRepository)
-        deleteDiary = DeleteDiaryUseCase(diaryRepository, settingsRepository)
+        deleteDiary = DeleteDiaryUseCase(diaryRepository)
         getDiaryById = GetDiaryByIdUseCase(diaryRepository)
         getPhotos = GetPhotosUseCase(diaryRepository)
         getDiariesByDate = GetDiariesByDateUseCase(diaryRepository)
