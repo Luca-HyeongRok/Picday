@@ -27,7 +27,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
 import com.picday.diary.data.repository.dataStore
 
 class CalendarWidgetProvider : AppWidgetProvider() {

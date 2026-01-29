@@ -8,6 +8,7 @@ import com.picday.diary.domain.usecase.diary.GetDiaryByIdUseCase
 import com.picday.diary.domain.usecase.diary.GetPhotosUseCase
 import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
 import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
+import com.picday.diary.fakes.FakeSettingsRepository
 import com.picday.diary.presentation.write.photo.WritePhotoItem
 import com.picday.diary.presentation.write.photo.WritePhotoState
 import com.picday.diary.presentation.write.state.WriteState
@@ -30,19 +31,21 @@ class WriteViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var repository: FakeDiaryRepository
+    private lateinit var diaryRepository: FakeDiaryRepository
+    private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var viewModel: WriteViewModel
 
     @Before
     fun setUp() {
-        repository = FakeDiaryRepository()
+        diaryRepository = FakeDiaryRepository()
+        settingsRepository = FakeSettingsRepository()
         viewModel = WriteViewModel(
-            addDiaryForDate = AddDiaryForDateUseCase(repository),
-            updateDiary = UpdateDiaryUseCase(repository),
-            replacePhotos = ReplacePhotosUseCase(repository),
-            getDiaryById = GetDiaryByIdUseCase(repository),
-            getPhotos = GetPhotosUseCase(repository),
-            deleteDiary = DeleteDiaryUseCase(repository)
+            addDiaryForDate = AddDiaryForDateUseCase(diaryRepository),
+            updateDiary = UpdateDiaryUseCase(diaryRepository),
+            replacePhotos = ReplacePhotosUseCase(diaryRepository),
+            getDiaryById = GetDiaryByIdUseCase(diaryRepository),
+            getPhotos = GetPhotosUseCase(diaryRepository),
+            deleteDiary = DeleteDiaryUseCase(diaryRepository, settingsRepository)
         )
     }
 
@@ -134,8 +137,8 @@ class WriteViewModelTest {
     fun `수정 모드에서 기존 사진과 신규 사진이 공존해야 한다`() = runTest {
         // Given: 이미 저장된 데이터가 있는 상태
         val date = LocalDate.now()
-        repository.addDiaryForDate(date, "Title", "Content", listOf("old_uri"))
-        val existingDiaryId = repository.getByDate(date)[0].id
+        diaryRepository.addDiaryForDate(date, "Title", "Content", listOf("old_uri"))
+        val existingDiaryId = diaryRepository.getByDate(date)[0].id
 
         // When: 수정 모드 진입
         viewModel.onEditClicked(existingDiaryId)
@@ -279,9 +282,9 @@ class WriteViewModelTest {
             } while (state.uiMode != WriteUiMode.VIEW)
         }
 
-        val diaries = repository.getByDate(date)
+        val diaries = diaryRepository.getByDate(date)
         assertEquals(1, diaries.size)
-        val photos = repository.getPhotos(diaries[0].id)
+        val photos = diaryRepository.getPhotos(diaries[0].id)
         assertEquals(2, photos.size)
         assertNull(releasedUris)
     }
@@ -289,8 +292,8 @@ class WriteViewModelTest {
     @Test
     fun `EDIT 저장 시 내용과 사진이 갱신되고 삭제된 content uri가 해제된다`() = runTest {
         val date = LocalDate.now()
-        repository.addDiaryForDate(date, "Old", "Content", listOf("content://old", "content://keep"))
-        val diaryId = repository.getByDate(date)[0].id
+        diaryRepository.addDiaryForDate(date, "Old", "Content", listOf("content://old", "content://keep"))
+        val diaryId = diaryRepository.getByDate(date)[0].id
 
         viewModel.onEditClicked(diaryId)
 
@@ -316,10 +319,10 @@ class WriteViewModelTest {
 
         assertEquals(listOf("content://old"), releasedUris)
 
-        val updatedDiary = repository.getDiaryById(diaryId)
+        val updatedDiary = diaryRepository.getDiaryById(diaryId)
         assertEquals("Changed", updatedDiary?.content)
 
-        val updatedPhotoUris = repository.getPhotos(diaryId).map { it.uri }
+        val updatedPhotoUris = diaryRepository.getPhotos(diaryId).map { it.uri }
         assertTrue(updatedPhotoUris.contains("content://keep"))
         assertTrue(updatedPhotoUris.contains("content://new"))
         assertFalse(updatedPhotoUris.contains("content://old"))
@@ -328,8 +331,8 @@ class WriteViewModelTest {
     @Test
     fun `DELETE 호출 시 일기가 제거되고 VIEW로 복귀한다`() = runTest {
         val date = LocalDate.now()
-        repository.addDiaryForDate(date, "Title", "Content")
-        val diaryId = repository.getByDate(date)[0].id
+        diaryRepository.addDiaryForDate(date, "Title", "Content")
+        val diaryId = diaryRepository.getByDate(date)[0].id
 
         viewModel.onEditClicked(diaryId)
 
@@ -346,7 +349,7 @@ class WriteViewModelTest {
             } while (state.uiMode != WriteUiMode.VIEW)
         }
 
-        assertNull(repository.getDiaryById(diaryId))
+        assertNull(diaryRepository.getDiaryById(diaryId))
     }
 
     @Test
@@ -369,8 +372,8 @@ class WriteViewModelTest {
     @Test
     fun `EDIT 전환 시 baseline이 설정되고 변경 전에는 isDirty가 false다`() = runTest {
         val date = LocalDate.now()
-        repository.addDiaryForDate(date, "Title", "Content", listOf("uri1"))
-        val existingDiaryId = repository.getByDate(date)[0].id
+        diaryRepository.addDiaryForDate(date, "Title", "Content", listOf("uri1"))
+        val existingDiaryId = diaryRepository.getByDate(date)[0].id
 
         viewModel.onEditClicked(existingDiaryId)
 

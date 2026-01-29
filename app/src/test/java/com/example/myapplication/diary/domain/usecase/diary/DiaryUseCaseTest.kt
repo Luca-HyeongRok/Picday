@@ -10,6 +10,7 @@ import com.picday.diary.domain.usecase.diary.HasAnyRecordUseCase
 import com.picday.diary.domain.usecase.diary.ReplacePhotosUseCase
 import com.picday.diary.domain.usecase.diary.UpdateDiaryUseCase
 import com.picday.diary.fakes.FakeDiaryRepository
+import com.picday.diary.fakes.FakeSettingsRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,7 +23,8 @@ import java.time.LocalDate
 
 class DiaryUseCaseTest {
 
-    private lateinit var repository: FakeDiaryRepository
+    private lateinit var diaryRepository: FakeDiaryRepository
+    private lateinit var settingsRepository: FakeSettingsRepository
     private lateinit var addDiaryForDate: AddDiaryForDateUseCase
     private lateinit var updateDiary: UpdateDiaryUseCase
     private lateinit var replacePhotos: ReplacePhotosUseCase
@@ -35,16 +37,17 @@ class DiaryUseCaseTest {
 
     @Before
     fun setUp() {
-        repository = FakeDiaryRepository()
-        addDiaryForDate = AddDiaryForDateUseCase(repository)
-        updateDiary = UpdateDiaryUseCase(repository)
-        replacePhotos = ReplacePhotosUseCase(repository)
-        deleteDiary = DeleteDiaryUseCase(repository)
-        getDiaryById = GetDiaryByIdUseCase(repository)
-        getPhotos = GetPhotosUseCase(repository)
-        getDiariesByDate = GetDiariesByDateUseCase(repository)
-        getDiariesByDateRange = GetDiariesByDateRangeUseCase(repository)
-        hasAnyRecord = HasAnyRecordUseCase(repository)
+        diaryRepository = FakeDiaryRepository()
+        settingsRepository = FakeSettingsRepository()
+        addDiaryForDate = AddDiaryForDateUseCase(diaryRepository)
+        updateDiary = UpdateDiaryUseCase(diaryRepository)
+        replacePhotos = ReplacePhotosUseCase(diaryRepository)
+        deleteDiary = DeleteDiaryUseCase(diaryRepository, settingsRepository)
+        getDiaryById = GetDiaryByIdUseCase(diaryRepository)
+        getPhotos = GetPhotosUseCase(diaryRepository)
+        getDiariesByDate = GetDiariesByDateUseCase(diaryRepository)
+        getDiariesByDateRange = GetDiariesByDateRangeUseCase(diaryRepository)
+        hasAnyRecord = HasAnyRecordUseCase(diaryRepository)
     }
 
     @Test

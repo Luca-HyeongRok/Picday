@@ -16,7 +16,7 @@ import java.time.YearMonth
 
 // Context 확장 프로퍼티를 사용하여 앱 전체에서 사용할 DataStore 인스턴스를 생성합니다.
 // "settings"라는 이름으로 파일에 저장됩니다.
-private val Context.dataStore by preferencesDataStore(name = "settings")
+internal val Context.dataStore by preferencesDataStore(name = "settings")
 
 /**
  * [SettingsRepository] 인터페이스의 구현체입니다.
