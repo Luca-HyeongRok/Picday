@@ -171,6 +171,22 @@ class DiaryViewModelTest {
     }
 
     @Test
+    fun `coverPhotoByDate는 상태 변경을 방출한다`() = runTest {
+        val date = LocalDate.of(2024, 3, 2)
+        val testDiary = Diary("diary_id_5", date, "Title", "Content", System.currentTimeMillis())
+        diaryRepository.addDiary(testDiary)
+
+        viewModel.coverPhotoByDate.test {
+            val initial = awaitItem()
+            assertNull(initial[date])
+
+            viewModel.saveDateCoverPhoto(date, "uri_saved_2")
+            val updated = awaitItem()
+            assertEquals("uri_saved_2", updated[date])
+        }
+    }
+
+    @Test
     fun `preloadCoverPhotos는 저장된 대표 사진과 최신 사진을 우선 반영해야 한다`() = runTest {
         val dateWithSavedCover = LocalDate.of(2024, 4, 1)
         val dateWithDiary = LocalDate.of(2024, 4, 2)
