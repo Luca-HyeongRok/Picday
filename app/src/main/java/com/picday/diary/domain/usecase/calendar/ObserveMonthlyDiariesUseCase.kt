@@ -6,6 +6,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class ObserveMonthlyDiariesUseCase @Inject constructor(
@@ -24,6 +25,8 @@ class ObserveMonthlyDiariesUseCase @Inject constructor(
             diaryRepository.getDiariesStream(startDate, endDate),
             monthlyCoverPhotosFlow
         ) { diaries, savedCovers ->
+            diaries to savedCovers
+        }.map { (diaries, savedCovers) ->
             val diariesByDate = diaries.groupBy { it.date }
             val coverPhotoMap = mutableMapOf<LocalDate, String>()
 
