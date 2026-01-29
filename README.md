@@ -79,29 +79,74 @@
 
 ## 프로젝트 구조
 ```
-app/src/main/java/com/picday/diary
-├─ core
-│  └─ navigation
-├─ data
-│  └─ diary
-│     ├─ dao
-│     ├─ database
-│     ├─ entity
-│     └─ repository
-├─ di
-├─ domain
-│  ├─ diary
-│  ├─ repository
-│  └─ usecase
-├─ presentation
-│  ├─ calendar
-│  ├─ common
-│  ├─ diary
-│  ├─ main
-│  ├─ navigation
-│  ├─ theme
-│  └─ write
-└─ widget
+PicDay
+├── presentation/                # UI 및 상태 관리 계층
+│   ├── navigation/              # 내비게이션 로직 및 그래프
+│   │   ├── MainNavGraph.kt
+│   │   └── NavigationRoot.kt
+│   ├── calendar/                # 캘린더 화면
+│   │   ├── CalendarScreen.kt
+│   │   ├── CalendarUiState.kt
+│   │   └── CalendarViewModel.kt
+│   ├── diary/                   # 일기 목록 화면
+│   │   ├── DiaryScreen.kt
+│   │   ├── DiaryUiState.kt
+│   │   └── DiaryViewModel.kt
+│   ├── write/                   # 일기 작성/수정 화면
+│   │   ├── WriteScreen.kt
+│   │   ├── WriteUiState.kt
+│   │   └── WriteViewModel.kt
+│   ├── main/                    # 메인 화면 및 공통 UI
+│   │   ├── MainScreen.kt
+│   │   └── MainNavReducer.kt
+│   ├── component/               # 재사용 가능한 공통 UI 컴포넌트
+│   │   ├── DiaryItemCard.kt
+│   │   └── WriteTopBar.kt
+│   └── common/                  # 여러 화면에서 공유하는 ViewModel
+│       └── SharedViewModel.kt
+│
+├── domain/                      # 핵심 비즈니스 로직 계층
+│   ├── usecase/                 # 비즈니스 로직 (UseCase)
+│   │   ├── calendar/
+│   │   │   └── GetDiariesUseCase.kt
+│   │   ├── diary/
+│   │   │   ├── AddDiaryUseCase.kt
+│   │   │   ├── DeleteDiaryUseCase.kt
+│   │   │   └── UpdateDiaryUseCase.kt
+│   │   └── settings/
+│   │       └── GetSettingsUseCase.kt
+│   ├── repository/              # 리포지토리 인터페이스
+│   │   ├── DiaryRepository.kt
+│   │   └── SettingsRepository.kt
+│   ├── model/                   # 순수 비즈니스 모델
+│   │   ├── Diary.kt
+│   │   ├── DiaryCoverPhoto.kt
+│   │   └── DiaryPhoto.kt
+│   └── updater/                 # 외부 알림 인터페이스
+│       └── CalendarWidgetUpdater.kt
+│
+├── data/                        # 데이터 소스 및 처리 계층
+│   ├── diary/
+│   │   ├── repository/
+│   │   │   └── DiaryRepositoryImpl.kt
+│   │   ├── dao/
+│   │   │   └── DiaryDao.kt
+│   │   ├── entity/
+│   │   │   ├── DiaryEntity.kt
+│   │   │   └── DiaryPhotoEntity.kt
+│   │   └── database/
+│   │       └── DiaryDatabase.kt
+│   ├── repository/
+│   │   └── SettingsRepositoryImpl.kt
+│   ├── di/                      # Hilt 의존성 주입
+│   │   ├── DiaryModule.kt
+│   │   ├── SettingsModule.kt
+│   │   └── WidgetModule.kt
+│   └── widget/                  # 앱 위젯
+│       ├── CalendarWidgetProvider.kt
+│       ├── CalendarWidgetUpdaterImpl.kt
+│       └── CalendarRemoteViewsFactory.kt
+
 ```
 
 ## 기술 스택
