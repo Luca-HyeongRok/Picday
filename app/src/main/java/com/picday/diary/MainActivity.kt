@@ -92,7 +92,8 @@ class MainActivity : ComponentActivity() {
                         put(MediaStore.Images.Media.IS_PENDING, 1)
                     }
                 }
-                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@forEachIndexed
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                    ?: return@forEachIndexed
                 val wroteBytes = resolver.openOutputStream(uri)?.use { output ->
                     resources.openRawResource(resId).use { input ->
                         input.copyTo(output)
@@ -112,12 +113,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun imageExists(resolver: android.content.ContentResolver, displayName: String): Boolean {
+    private fun imageExists(
+        resolver: android.content.ContentResolver,
+        displayName: String
+    ): Boolean {
         val projection = arrayOf(MediaStore.Images.Media._ID)
         val selection: String
         val selectionArgs: Array<String>
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            selection = "${MediaStore.Images.Media.DISPLAY_NAME}=? AND ${MediaStore.Images.Media.RELATIVE_PATH}=?"
+            selection =
+                "${MediaStore.Images.Media.DISPLAY_NAME}=? AND ${MediaStore.Images.Media.RELATIVE_PATH}=?"
             selectionArgs = arrayOf(displayName, "Pictures/PicDay/")
         } else {
             selection = "${MediaStore.Images.Media.DISPLAY_NAME}=?"

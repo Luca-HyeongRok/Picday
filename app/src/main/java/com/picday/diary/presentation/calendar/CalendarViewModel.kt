@@ -54,9 +54,11 @@ class CalendarViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeMonthlyPhotos() {
         viewModelScope.launch {
+            // Room Flow 구독: DB 변경 시 coverPhotos를 즉시 갱신
             _uiState
                 .map { it.currentYearMonth }
                 .distinctUntilChanged()
+                // 월이 바뀌면 해당 월 Flow로 구독을 전환
                 .flatMapLatest { yearMonth ->
                     observeMonthlyDiaries(yearMonth)
                 }

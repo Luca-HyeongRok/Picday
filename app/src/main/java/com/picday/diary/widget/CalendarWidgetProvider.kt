@@ -3,6 +3,7 @@ package com.picday.diary.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -288,15 +289,19 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         internal const val WIDGET_MONTH_PREFIX = "widget_month_"
         private const val WIDGET_MONTH_FALLBACK_KEY = "widget_month_global"
         private const val MIN_SIZE_5X5_DP = 320
+
+        // 이 함수는 주로 시스템 시간/날짜 변경과 같은 외부 이벤트에 반응하여 위젯의 내용을 새로 고쳐야 할 때 사용
         fun updateAll(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = android.content.ComponentName(context, CalendarWidgetProvider::class.java)
+            val componentName = ComponentName(context, CalendarWidgetProvider::class.java)
+            // 현재 홈 화면에 설치된 모든 해당 위젯의 ID 목록을 가져옴
             val ids = appWidgetManager.getAppWidgetIds(componentName)
             if (ids.isNotEmpty()) {
                 val intent = Intent(context, CalendarWidgetProvider::class.java).apply {
                     action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                 }
+                // 앱이 실행 중이지 않아도 시스템이 위젯을 갱신할 수 있음
                 context.sendBroadcast(intent)
             }
         }
