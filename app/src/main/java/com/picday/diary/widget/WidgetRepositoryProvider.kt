@@ -18,7 +18,7 @@ object WidgetRepositoryProvider {
             diaryRepository ?: run {
                 val appContext = context.applicationContext
                 val db = database ?: Room.databaseBuilder(appContext, PicDayDatabase::class.java, "picday.db")
-                    .addMigrations(PicDayDatabase.MIGRATION_1_2)
+                    .addMigrations(PicDayDatabase.MIGRATION_1_2, PicDayDatabase.MIGRATION_2_3)
                     .build()
                     .also { database = it }
                 RoomDiaryRepository(db, db.diaryDao(), db.diaryPhotoDao())
