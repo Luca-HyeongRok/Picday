@@ -2,13 +2,11 @@ package com.picday.diary.di
 
 import android.content.Context
 import androidx.room.Room
-import com.picday.diary.BuildConfig
 import com.picday.diary.data.diary.dao.DiaryDao
 import com.picday.diary.data.diary.dao.DiaryPhotoDao
+import com.picday.diary.data.diary.dao.ExpenseDao
 import com.picday.diary.data.diary.database.PicDayDatabase
-import com.picday.diary.data.diary.repository.InMemoryDiaryRepository
 import com.picday.diary.data.diary.repository.RoomDiaryRepository
-import com.picday.diary.data.diary.repository.seedDiaryData
 import com.picday.diary.domain.repository.DiaryRepository
 import dagger.Module
 import dagger.Provides
@@ -28,7 +26,7 @@ object DiaryModule {
             PicDayDatabase::class.java,
             "picday.db"
         )
-            .addMigrations(PicDayDatabase.MIGRATION_1_2)
+            .addMigrations(PicDayDatabase.MIGRATION_1_2, PicDayDatabase.MIGRATION_2_3)
             .build()
     }
 
@@ -40,6 +38,11 @@ object DiaryModule {
     @Provides
     fun provideDiaryPhotoDao(database: PicDayDatabase): DiaryPhotoDao {
         return database.diaryPhotoDao()
+    }
+
+    @Provides
+    fun provideExpenseDao(database: PicDayDatabase): ExpenseDao {
+        return database.expenseDao()
     }
 
     @Provides
