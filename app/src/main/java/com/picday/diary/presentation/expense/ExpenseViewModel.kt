@@ -7,6 +7,7 @@ import com.picday.diary.domain.usecase.expense.DeleteExpenseUseCase
 import com.picday.diary.domain.usecase.expense.GetDiaryExpenseTotalUseCase
 import com.picday.diary.domain.usecase.expense.GetDiaryExpensesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,7 @@ class ExpenseViewModel @Inject constructor(
     private fun handleLoadExpenses(diaryId: String) {
         currentDiaryId = diaryId
         observeJob?.cancel()
-        _state.update { it.copy(loading = true) }
+        _state.update { it.copy(loading = true, errorMessage = null) }
 
         observeJob = viewModelScope.launch {
             // 목록/총액 Flow를 결합해 하나의 상태로 동기화한다.
@@ -53,15 +54,22 @@ class ExpenseViewModel @Inject constructor(
             ) { expenses, total ->
                 expenses to total
             }
-                .catch {
-                    _state.update { current -> current.copy(loading = false) }
+                .catch { throwable ->
+                    if (throwable is CancellationException) throw throwable
+                    _state.update { current ->
+                        current.copy(
+                            loading = false,
+                            errorMessage = throwable.message ?: "지출 내역을 불러오지 못했습니다."
+                        )
+                    }
                 }
                 .collect { (expenses, total) ->
                     _state.update { current ->
                         current.copy(
                             expenses = expenses,
                             totalExpense = total.toSafeInt(),
-                            loading = false
+                            loading = false,
+                            errorMessage = null
                         )
                     }
                 }
@@ -70,15 +78,31 @@ class ExpenseViewModel @Inject constructor(
 
     private fun handleAddExpense(intent: ExpenseIntent.AddExpense) {
         viewModelScope.launch {
-            addExpenseUseCase(intent.expense)
-            // 목록은 LoadExpenses에서 구독한 Flow가 자동 갱신한다.
+            try {
+                addExpenseUseCase(intent.expense)
+                // 목록은 LoadExpenses에서 구독한 Flow가 자동 갱신한다.
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { current ->
+                    current.copy(errorMessage = e.message ?: "지출 추가에 실패했습니다.")
+                }
+            }
         }
     }
 
     private fun handleDeleteExpense(intent: ExpenseIntent.DeleteExpense) {
         viewModelScope.launch {
-            deleteExpenseUseCase(intent.expense)
-            // 목록은 LoadExpenses에서 구독한 Flow가 자동 갱신한다.
+            try {
+                deleteExpenseUseCase(intent.expense)
+                // 목록은 LoadExpenses에서 구독한 Flow가 자동 갱신한다.
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { current ->
+                    current.copy(errorMessage = e.message ?: "지출 삭제에 실패했습니다.")
+                }
+            }
         }
     }
 
