@@ -1,14 +1,15 @@
-package com.picday.diary.data.diary.repository
+package com.picday.diary.data.expense.repository
 
-import com.picday.diary.data.diary.dao.ExpenseDao
-import com.picday.diary.data.diary.entity.toDomain
-import com.picday.diary.data.diary.entity.toEntity
+import com.picday.diary.data.expense.dao.ExpenseDao
+import com.picday.diary.data.expense.entity.toDomain
+import com.picday.diary.data.expense.entity.toEntity
 import com.picday.diary.domain.expense.Expense
-import com.picday.diary.domain.repository.ExpenseRepository
+import com.picday.diary.domain.expense.ExpenseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class RoomExpenseRepository(
+class ExpenseRepositoryImpl @Inject constructor(
     private val expenseDao: ExpenseDao
 ) : ExpenseRepository {
     override suspend fun addExpense(expense: Expense) {

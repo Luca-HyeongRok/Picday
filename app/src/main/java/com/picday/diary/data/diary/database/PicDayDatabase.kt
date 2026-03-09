@@ -4,12 +4,12 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.picday.diary.data.expense.dao.ExpenseDao
+import com.picday.diary.data.expense.entity.ExpenseEntity
 import com.picday.diary.data.diary.dao.DiaryDao
 import com.picday.diary.data.diary.dao.DiaryPhotoDao
-import com.picday.diary.data.diary.dao.ExpenseDao
 import com.picday.diary.data.diary.entity.DiaryEntity
 import com.picday.diary.data.diary.entity.DiaryPhotoEntity
-import com.picday.diary.data.diary.entity.ExpenseEntity
 
 @Database(
     entities = [DiaryEntity::class, DiaryPhotoEntity::class, ExpenseEntity::class],

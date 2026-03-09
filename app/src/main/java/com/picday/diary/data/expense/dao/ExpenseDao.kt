@@ -1,11 +1,11 @@
-package com.picday.diary.data.diary.dao
+package com.picday.diary.data.expense.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.picday.diary.data.diary.entity.ExpenseEntity
+import com.picday.diary.data.expense.entity.ExpenseEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

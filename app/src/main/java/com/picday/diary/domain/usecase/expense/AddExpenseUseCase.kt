@@ -1,7 +1,7 @@
 package com.picday.diary.domain.usecase.expense
 
 import com.picday.diary.domain.expense.Expense
-import com.picday.diary.domain.repository.ExpenseRepository
+import com.picday.diary.domain.expense.ExpenseRepository
 import javax.inject.Inject
 
 class AddExpenseUseCase @Inject constructor(

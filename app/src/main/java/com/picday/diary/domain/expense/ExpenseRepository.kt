@@ -1,6 +1,5 @@
-package com.picday.diary.domain.repository
+package com.picday.diary.domain.expense
 
-import com.picday.diary.domain.expense.Expense
 import kotlinx.coroutines.flow.Flow
 
 interface ExpenseRepository {
