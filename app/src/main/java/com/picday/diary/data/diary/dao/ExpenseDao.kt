@@ -20,5 +20,5 @@ interface ExpenseDao {
     fun getExpensesByDiaryId(diaryId: String): Flow<List<ExpenseEntity>>
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM expense WHERE diaryId = :diaryId")
-    fun getTotalExpenseByDiary(diaryId: String): Flow<Int>
+    fun getTotalExpenseByDiary(diaryId: String): Flow<Long>
 }
