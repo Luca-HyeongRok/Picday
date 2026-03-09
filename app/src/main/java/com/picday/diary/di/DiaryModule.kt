@@ -2,14 +2,14 @@ package com.picday.diary.di
 
 import android.content.Context
 import androidx.room.Room
+import com.picday.diary.data.expense.dao.ExpenseDao
+import com.picday.diary.data.expense.repository.ExpenseRepositoryImpl
 import com.picday.diary.data.diary.dao.DiaryDao
 import com.picday.diary.data.diary.dao.DiaryPhotoDao
-import com.picday.diary.data.diary.dao.ExpenseDao
 import com.picday.diary.data.diary.database.PicDayDatabase
-import com.picday.diary.data.diary.repository.RoomExpenseRepository
 import com.picday.diary.data.diary.repository.RoomDiaryRepository
+import com.picday.diary.domain.expense.ExpenseRepository
 import com.picday.diary.domain.repository.DiaryRepository
-import com.picday.diary.domain.repository.ExpenseRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,7 +52,7 @@ object DiaryModule {
     fun provideExpenseRepository(
         expenseDao: ExpenseDao
     ): ExpenseRepository {
-        return RoomExpenseRepository(expenseDao)
+        return ExpenseRepositoryImpl(expenseDao)
     }
 
     @Provides

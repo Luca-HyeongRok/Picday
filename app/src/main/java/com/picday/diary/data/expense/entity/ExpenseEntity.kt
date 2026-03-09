@@ -1,9 +1,10 @@
-﻿package com.picday.diary.data.diary.entity
+package com.picday.diary.data.expense.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.picday.diary.data.diary.entity.DiaryEntity
 import com.picday.diary.domain.expense.Expense
 
 @Entity(
@@ -20,7 +21,7 @@ import com.picday.diary.domain.expense.Expense
 )
 data class ExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
-    // 기존 DiaryEntity.id가 String 타입이므로 FK 타입을 동일하게 맞춘다.
+    // DiaryEntity.id가 String 타입이라 FK도 String으로 맞춘다.
     val diaryId: String,
     val title: String,
     val amount: Int,
