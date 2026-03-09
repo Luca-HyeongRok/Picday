@@ -1,9 +1,10 @@
-package com.picday.diary.data.diary.entity
+﻿package com.picday.diary.data.diary.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.picday.diary.domain.expense.Expense
 
 @Entity(
     tableName = "expense",
@@ -27,3 +28,26 @@ data class ExpenseEntity(
     val receiptImagePath: String?,
     val createdAt: Long
 )
+
+fun ExpenseEntity.toDomain(): Expense {
+    return Expense(
+        id = id,
+        diaryId = diaryId,
+        title = title,
+        amount = amount,
+        category = category,
+        receiptImagePath = receiptImagePath
+    )
+}
+
+fun Expense.toEntity(): ExpenseEntity {
+    return ExpenseEntity(
+        id = id,
+        diaryId = diaryId,
+        title = title,
+        amount = amount,
+        category = category,
+        receiptImagePath = receiptImagePath,
+        createdAt = System.currentTimeMillis()
+    )
+}

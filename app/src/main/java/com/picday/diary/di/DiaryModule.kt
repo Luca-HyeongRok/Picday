@@ -6,8 +6,10 @@ import com.picday.diary.data.diary.dao.DiaryDao
 import com.picday.diary.data.diary.dao.DiaryPhotoDao
 import com.picday.diary.data.diary.dao.ExpenseDao
 import com.picday.diary.data.diary.database.PicDayDatabase
+import com.picday.diary.data.diary.repository.RoomExpenseRepository
 import com.picday.diary.data.diary.repository.RoomDiaryRepository
 import com.picday.diary.domain.repository.DiaryRepository
+import com.picday.diary.domain.repository.ExpenseRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -43,6 +45,14 @@ object DiaryModule {
     @Provides
     fun provideExpenseDao(database: PicDayDatabase): ExpenseDao {
         return database.expenseDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideExpenseRepository(
+        expenseDao: ExpenseDao
+    ): ExpenseRepository {
+        return RoomExpenseRepository(expenseDao)
     }
 
     @Provides
